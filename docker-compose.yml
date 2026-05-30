@@ -1,12 +1,10 @@
-version: '3.8'
-
 networks:
   leave-net:
     driver: bridge
 
 services:
   consul:
-    image: consul:1.17
+    image: hashicorp/consul:latest
     command: agent -dev -client=0.0.0.0
     ports:
       - "8500:8500"
