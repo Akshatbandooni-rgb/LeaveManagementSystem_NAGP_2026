@@ -18,7 +18,10 @@ if (!jwtSecret) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
+const internalSecret = process.env.INTERNAL_SECRET;
+
 export const config = {
   port,
   jwtSecret,
+  internalSecret,
 };

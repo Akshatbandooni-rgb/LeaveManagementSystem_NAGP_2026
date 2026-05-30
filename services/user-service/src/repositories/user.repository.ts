@@ -1,5 +1,8 @@
 import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 import { User, UserRole } from '@leave-mgmt/shared';
+
+export type NewUser = Omit<User, 'id' | 'createdAt'>;
 
 const users = new Map<string, User>();
 
@@ -56,7 +59,16 @@ export function findById(id: string): User | undefined {
   return users.get(id);
 }
 
-export function save(user: User): User {
-  users.set(user.id, user);
-  return user;
+export function findAll(): User[] {
+  return Array.from(users.values());
+}
+
+export function save(user: NewUser): User {
+  const newUser: User = {
+    ...user,
+    id: uuidv4(),
+    createdAt: new Date().toISOString(),
+  };
+  users.set(newUser.id, newUser);
+  return newUser;
 }
