@@ -1,4 +1,17 @@
+# dependencies
 node_modules/
+
+# build output
 dist/
+
+# environment files
 .env
+.env.local
+
+# typescript
 *.tsbuildinfo
+
+# generated js files accidentally created beside ts source
+**/*.js
+**/*.js.map
+**/*.d.ts
