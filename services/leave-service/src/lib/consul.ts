@@ -10,14 +10,17 @@ const consulClient = new Consul({
 });
 
 export async function registerService(): Promise<void> {
+  const serviceHost = process.env.CONSUL_SERVICE_HOST || 'localhost';
+  const healthCheckHost = process.env.CONSUL_SERVICE_HOST || 'host.docker.internal';
+
   try {
     await consulClient.agent.service.register({
       name: 'leave-service',
       id: 'leave-service-1',
-      address: 'localhost',
+      address: serviceHost,
       port: config.port,
       check: {
-        http: `http://host.docker.internal:${config.port}/health`,
+        http: `http://${healthCheckHost}:${config.port}/health`,
         interval: '10s',
         deregistercriticalserviceafter: '30s',
       },
