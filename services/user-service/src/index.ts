@@ -1,6 +1,7 @@
 import './types/express';
 import express from 'express';
 import { config } from './config';
+import { deregisterService, registerService } from './lib/consul';
 import { logger } from './lib/logger';
 import { connect } from './lib/rabbitmq';
 import authRoutes from './routes/auth.routes';
@@ -19,6 +20,11 @@ app.use(errorHandler);
 
 connect();
 
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
   logger.info(`User service running on port ${config.port}`);
+  registerService();
+});
+
+process.on('SIGTERM', () => {
+  deregisterService().then(() => process.exit(0));
 });

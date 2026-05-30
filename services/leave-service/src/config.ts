@@ -22,4 +22,5 @@ export const config = {
   jwtSecret,
   internalSecret,
   rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin@localhost:5672',
+  consulUrl: process.env.CONSUL_URL || 'http://localhost:8500',
 };

@@ -1,6 +1,7 @@
 import './types/express';
 import express from 'express';
 import { config } from './config';
+import { deregisterService, registerService } from './lib/consul';
 import { startConsumer } from './events/consumer/user.consumer';
 import { logger } from './lib/logger';
 import { connect } from './lib/rabbitmq';
@@ -49,9 +50,14 @@ const server = app.listen(config.port, (err?: Error) => {
   }
 
   logger.info(`Leave service running on port ${config.port}`);
+  registerService();
 });
 
 server.on('error', (err: NodeJS.ErrnoException) => {
   logger.error({ err, port: config.port }, 'Server error');
   process.exit(1);
+});
+
+process.on('SIGTERM', () => {
+  deregisterService().then(() => process.exit(0));
 });

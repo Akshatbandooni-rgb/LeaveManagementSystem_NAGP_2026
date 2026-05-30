@@ -10,7 +10,7 @@ export async function proxyRequest(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const serviceUrl = serviceRegistry.resolveService(serviceName);
+    const serviceUrl = await serviceRegistry.resolveService(serviceName);
     const targetUrl = `${serviceUrl}${req.originalUrl}`;
     const breaker = getCircuitBreaker(serviceName);
 
