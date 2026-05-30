@@ -1,7 +1,9 @@
 import './types/express';
 import express from 'express';
 import { config } from './config';
+import { startConsumer } from './events/consumer/user.consumer';
 import { logger } from './lib/logger';
+import { connect } from './lib/rabbitmq';
 import { correlationId } from './middleware/correlationId.middleware';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { initializeBalance } from './repositories/balance.repository';
@@ -27,6 +29,9 @@ app.get('/health', (_req, res) => {
 app.use('/leaves', leaveRoutes);
 app.use('/balances', balanceRoutes);
 app.use(errorHandler);
+
+connect();
+startConsumer();
 
 process.on('unhandledRejection', (reason) => {
   logger.error({ reason }, 'Unhandled promise rejection');

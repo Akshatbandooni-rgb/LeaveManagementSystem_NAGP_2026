@@ -4,6 +4,11 @@ import {
   LeaveStatus,
   LeaveType,
 } from '@leave-mgmt/shared';
+import {
+  publishLeaveApplied,
+  publishLeaveApproved,
+  publishLeaveRejected,
+} from '../lib/rabbitmq';
 import * as balanceRepo from '../repositories/balance.repository';
 import * as leaveRepo from '../repositories/leave.repository';
 
@@ -71,6 +76,13 @@ export async function applyLeave(input: {
     status: LeaveStatus.PENDING,
   });
 
+  publishLeaveApplied({
+    eventType: 'leave.applied',
+    leaveRequest: saved,
+    managerId: input.managerId,
+    correlationId: input.correlationId,
+  });
+
   return saved;
 }
 
@@ -105,6 +117,13 @@ export async function approveLeave(input: {
 
   const updated = leaveRepo.update(input.leaveId, { status: LeaveStatus.APPROVED });
 
+  publishLeaveApproved({
+    eventType: 'leave.approved',
+    leaveRequest: updated!,
+    employeeId: leave.employeeId,
+    correlationId: input.correlationId,
+  });
+
   return updated!;
 }
 
@@ -131,6 +150,14 @@ export async function rejectLeave(input: {
   const updated = leaveRepo.update(input.leaveId, {
     status: LeaveStatus.REJECTED,
     rejectionReason: input.rejectionReason,
+  });
+
+  publishLeaveRejected({
+    eventType: 'leave.rejected',
+    leaveRequest: updated!,
+    employeeId: leave.employeeId,
+    rejectionReason: input.rejectionReason,
+    correlationId: input.correlationId,
   });
 
   return updated!;

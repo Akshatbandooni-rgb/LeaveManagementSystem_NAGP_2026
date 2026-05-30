@@ -24,4 +24,5 @@ export const config = {
   port,
   jwtSecret,
   internalSecret,
+  rabbitmqUrl: process.env.RABBITMQ_URL || 'amqp://admin:admin@localhost:5672',
 };

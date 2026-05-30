@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { AppError, User } from '@leave-mgmt/shared';
+import { AppError, User, UserRole } from '@leave-mgmt/shared';
+import { publishUserCreated } from '../lib/rabbitmq';
 import * as userRepository from '../repositories/user.repository';
 import { CreateUserInput } from '../validators/user.validators';
 
@@ -24,7 +25,7 @@ export function getAllUsers(): UserPublic[] {
   return userRepository.findAll().map(toPublic);
 }
 
-export function createUser(data: CreateUserInput): UserPublic {
+export function createUser(data: CreateUserInput, correlationId = 'none'): UserPublic {
   if (userRepository.findByEmail(data.email)) {
     throw AppError.conflict('Email already in use');
   }
@@ -38,6 +39,15 @@ export function createUser(data: CreateUserInput): UserPublic {
     role: data.role,
     managerId: data.managerId,
   });
+
+  if (user.role === UserRole.EMPLOYEE) {
+    publishUserCreated({
+      eventType: 'user.created',
+      userId: user.id,
+      role: user.role,
+      correlationId,
+    });
+  }
 
   return toPublic(user);
 }

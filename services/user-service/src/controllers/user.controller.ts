@@ -22,7 +22,8 @@ export function getAll(_req: Request, res: Response, next: NextFunction): void {
 
 export function create(req: Request, res: Response, next: NextFunction): void {
   try {
-    const user = userService.createUser(req.body);
+    const correlationId = (req.headers['x-correlation-id'] as string) || 'none';
+    const user = userService.createUser(req.body, correlationId);
     res.status(201).json(user);
   } catch (err) {
     next(err);
