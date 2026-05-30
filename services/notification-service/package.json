@@ -9,6 +9,10 @@
   },
   "dependencies": {
     "@leave-mgmt/shared": "1.0.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.76.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.218.0",
+    "@opentelemetry/resources": "^2.7.1",
+    "@opentelemetry/sdk-node": "^0.218.0",
     "amqp-connection-manager": "^4.1.4",
     "amqplib": "^0.10.3",
     "consul": "^1.0.0",

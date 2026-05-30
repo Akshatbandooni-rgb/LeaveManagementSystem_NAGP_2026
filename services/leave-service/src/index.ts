@@ -1,3 +1,6 @@
+import { initTracing } from './lib/tracing';
+initTracing('leave-service');
+
 import './types/express';
 import express from 'express';
 import { config } from './config';

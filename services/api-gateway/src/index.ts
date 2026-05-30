@@ -1,3 +1,6 @@
+import { initTracing } from './lib/tracing';
+initTracing('api-gateway');
+
 import './types/express';
 import express from 'express';
 import { config } from './config';

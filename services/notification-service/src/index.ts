@@ -1,3 +1,6 @@
+import { initTracing } from './lib/tracing';
+initTracing('notification-service');
+
 import express from 'express';
 import { config } from './config';
 import { startConsumer } from './consumers/leave.consumer';
