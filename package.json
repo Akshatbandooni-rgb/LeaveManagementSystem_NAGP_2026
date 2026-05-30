@@ -1,0 +1,17 @@
+{
+  "name": "leave-management-system",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "infra:up": "docker-compose up consul rabbitmq jaeger -d",
+    "infra:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}
