@@ -1,0 +1,171 @@
+<mxfile host="app.diagrams.net" agent="Codex" pages="2">
+  <diagram id="service-communication" name="1 - Service Communication">
+    <mxGraphModel dx="3660" dy="2024" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="bg" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=none" value="" vertex="1">
+          <mxGeometry height="1703" width="2947" x="-407" y="-457" as="geometry" />
+        </mxCell>
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;fontColor=#0f172a" value="Leave Management System - Service Communication" vertex="1">
+          <mxGeometry height="45" width="760" x="480" y="-136" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-http" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#dcfce7;strokeColor=#22c55e;fontColor=#166534;fontSize=13;fontStyle=1" value="Solid green arrows = synchronous HTTP" vertex="1">
+          <mxGeometry height="30" width="260" x="489" y="-82" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-async" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ffedd5;strokeColor=#f97316;fontColor=#9a3412;fontSize=13;fontStyle=1" value="Dashed orange arrows = RabbitMQ events" vertex="1">
+          <mxGeometry height="30" width="300" x="781" y="-82" as="geometry" />
+        </mxCell>
+        <mxCell id="client" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#ffffff;strokeColor=#cbd5e1;strokeWidth=1.5;fontSize=15;fontStyle=1;fontColor=#0f172a" value="Client / Postman / curl&#xa;REST API consumer" vertex="1">
+          <mxGeometry height="124" width="250" x="-101" y="234" as="geometry" />
+        </mxCell>
+        <mxCell id="client-badge" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#2563eb;strokeColor=none;fontColor=#ffffff;fontSize=14;fontStyle=1" value="API" vertex="1">
+          <mxGeometry height="32" width="32" x="105" y="318" as="geometry" />
+        </mxCell>
+        <mxCell id="ikfDRsLPkU_Hb3LJmG6V-5" edge="1" parent="1" source="gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#16A34A;" target="user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ikfDRsLPkU_Hb3LJmG6V-6" edge="1" parent="1" source="gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#16A34A;" target="leave">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="gateway" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#ecfdf5;strokeColor=#22c55e;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#052e16" value="API Gateway&#xa;Port 3000&#xa;&#xa;JWT validation&#xa;Circuit breaker&#xa;Service discovery lookup" vertex="1">
+          <mxGeometry height="140" width="310" x="330" y="226" as="geometry" />
+        </mxCell>
+        <mxCell id="gateway-node" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#16a34a;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1" value="Node.js" vertex="1">
+          <mxGeometry height="24" width="76" x="349" y="237" as="geometry" />
+        </mxCell>
+        <mxCell id="gateway-express" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1" value="Express" vertex="1">
+          <mxGeometry height="24" width="76" x="558" y="237" as="geometry" />
+        </mxCell>
+        <mxCell id="ikfDRsLPkU_Hb3LJmG6V-8" edge="1" parent="1" source="user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;strokeWidth=2;strokeColor=#F9732A;startSize=7;" target="rabbit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="user" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#fff7ed;strokeColor=#f97316;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#431407" value="User Service&#xa;Port 3001&#xa;&#xa;Identity and login&#xa;JWT issuance&#xa;User CRUD&#xa;Storage: User Map" vertex="1">
+          <mxGeometry height="170" width="310" x="891" y="9" as="geometry" />
+        </mxCell>
+        <mxCell id="user-node" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#16a34a;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1" value="Node.js" vertex="1">
+          <mxGeometry height="24" width="76" x="899" y="17" as="geometry" />
+        </mxCell>
+        <mxCell id="user-express" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1" value="Express" vertex="1">
+          <mxGeometry height="24" width="76" x="1114" y="17" as="geometry" />
+        </mxCell>
+        <mxCell id="ikfDRsLPkU_Hb3LJmG6V-4" edge="1" parent="1" source="leave" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;strokeWidth=2;strokeColor=light-dark(#f9732a, #ededed);" target="rabbit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="leave" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#eff6ff;strokeColor=#3b82f6;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#172554" value="Leave Service&#xa;Port 3002&#xa;&#xa;Leave requests&#xa;Leave balances&#xa;Approval rules&#xa;Storage: Leave + Balance Maps" vertex="1">
+          <mxGeometry height="180" width="310" x="891" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="leave-node" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#16a34a;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1" value="Node.js" vertex="1">
+          <mxGeometry height="24" width="76" x="899" y="432" as="geometry" />
+        </mxCell>
+        <mxCell id="leave-express" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1" value="Express" vertex="1">
+          <mxGeometry height="24" width="76" x="1114" y="435" as="geometry" />
+        </mxCell>
+        <mxCell id="ikfDRsLPkU_Hb3LJmG6V-3" edge="1" parent="1" source="rabbit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;dashed=1;strokeWidth=2;strokeColor=light-dark(#f97316, #ededed);startSize=7;sourcePerimeterSpacing=0;" target="leave">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ikfDRsLPkU_Hb3LJmG6V-9" edge="1" parent="1" source="rabbit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#F9732A;dashed=1;strokeWidth=2;" target="notification">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rabbit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#fff1e6;strokeColor=#ff6600;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#3b1700" value="RabbitMQ&#xa;AMQP 5672 | UI 15672&#xa;&#xa;Exchange: user.events&#xa;Exchange: leave.events&#xa;Queues route events to consumers" vertex="1">
+          <mxGeometry height="176" width="300" x="1553" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="rabbit-badge" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ff6600;strokeColor=none;fontColor=#ffffff;fontSize=12;fontStyle=1" value="RabbitMQ" vertex="1">
+          <mxGeometry height="26" width="97" x="1566" y="427" as="geometry" />
+        </mxCell>
+        <mxCell id="notification" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#fdf2f8;strokeColor=#ec4899;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#500724" value="Notification Service&#xa;Port 3003&#xa;&#xa;Consumes leave events&#xa;No business HTTP API&#xa;Structured notification logs" vertex="1">
+          <mxGeometry height="168" width="351" x="882" y="755" as="geometry" />
+        </mxCell>
+        <mxCell id="notification-node" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=35;fillColor=#16a34a;strokeColor=none;fontColor=#ffffff;fontSize=11;fontStyle=1" value="Node.js" vertex="1">
+          <mxGeometry height="24" width="76" x="891" y="767" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-client-gateway" edge="1" parent="1" source="client" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#16a34a" target="gateway" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-rest" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ffffff;strokeColor=#bbf7d0;fontColor=#166534;fontSize=12;fontStyle=1" value="REST API" vertex="1">
+          <mxGeometry height="28" width="82" x="186" y="258" as="geometry" />
+        </mxCell>
+        <mxCell id="label-sync-user" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#bbf7d0;fontColor=#166534;fontSize=12;fontStyle=1" value="sync HTTP&#xa;/auth, /users" vertex="1">
+          <mxGeometry height="46" width="130" x="731" y="38" as="geometry" />
+        </mxCell>
+        <mxCell id="label-sync-leave" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#bbf7d0;fontColor=#166534;fontSize=12;fontStyle=1" value="sync HTTP&#xa;/leaves, /balances" vertex="1">
+          <mxGeometry height="46" width="150" x="721" y="521" as="geometry" />
+        </mxCell>
+        <mxCell id="label-user-publish" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#fed7aa;fontColor=#9a3412;fontSize=12;fontStyle=1" value="publish async&#xa;user.created" vertex="1">
+          <mxGeometry height="46" width="132" x="1333" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="label-user-consume" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#fed7aa;fontColor=#9a3412;fontSize=12;fontStyle=1" value="consume async&#xa;user.created" vertex="1">
+          <mxGeometry height="46" width="132" x="1330" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="label-leave-publish" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#fed7aa;fontColor=#9a3412;fontSize=12;fontStyle=1" value="publish async&#xa;leave.applied&#xa;leave.approved&#xa;leave.rejected" vertex="1">
+          <mxGeometry height="66" width="138" x="1330" y="517" as="geometry" />
+        </mxCell>
+        <mxCell id="label-notification-consume" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#fed7aa;fontColor=#9a3412;fontSize=12;fontStyle=1" value="consume async&#xa;leave events" vertex="1">
+          <mxGeometry height="46" width="132" x="1343" y="784" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="platform-services" name="2 - Platform Services">
+    <mxGraphModel dx="1717" dy="937" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="p0" />
+        <mxCell id="p1" parent="p0" />
+        <mxCell id="p-bg" parent="p1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=none;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="850" width="1575" as="geometry" />
+        </mxCell>
+        <mxCell id="p-title" parent="p1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;fontColor=#0f172a" value="Leave Management System - Platform Services" vertex="1">
+          <mxGeometry height="44" width="720" x="390" y="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p-subtitle" parent="p1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontColor=#64748b" value="This page keeps cross-cutting infrastructure separate from the business communication flow." vertex="1">
+          <mxGeometry height="24" width="640" x="430" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="app-group" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#ffffff;strokeColor=#cbd5e1;strokeWidth=2;fontSize=16;fontStyle=1;fontColor=#0f172a;align=center" value="Application Services&#xa;&#xa;API Gateway :3000&#xa;User Service :3001&#xa;Leave Service :3002&#xa;Notification Service :3003" vertex="1">
+          <mxGeometry height="230" width="380" x="560" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="app-node" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#16a34a;strokeColor=none;fontColor=#ffffff;fontSize=12;fontStyle=1" value="Node.js" vertex="1">
+          <mxGeometry height="26" width="86" x="652" y="372" as="geometry" />
+        </mxCell>
+        <mxCell id="app-express" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#111827;strokeColor=none;fontColor=#ffffff;fontSize=12;fontStyle=1" value="Express" vertex="1">
+          <mxGeometry height="26" width="86" x="760" y="372" as="geometry" />
+        </mxCell>
+        <mxCell id="consul" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#fdf2f8;strokeColor=#e91e63;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#831843" value="Consul&#xa;Port 8500&#xa;&#xa;Service registry&#xa;Health checks&#xa;Gateway resolves healthy service instances" vertex="1">
+          <mxGeometry height="160" width="330" x="22" y="212" as="geometry" />
+        </mxCell>
+        <mxCell id="consul-badge" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#e91e63;strokeColor=none;fontColor=#ffffff;fontSize=12;fontStyle=1" value="Consul" vertex="1">
+          <mxGeometry height="26" width="82" x="258" y="228" as="geometry" />
+        </mxCell>
+        <mxCell id="jaeger" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#f5f3ff;strokeColor=#8b5cf6;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#4c1d95" value="Jaeger + OpenTelemetry&#xa;UI 16686 | OTLP 4318&#xa;&#xa;Distributed traces&#xa;Request timing&#xa;Cross-service waterfall view" vertex="1">
+          <mxGeometry height="160" width="385" x="1143" y="215" as="geometry" />
+        </mxCell>
+        <mxCell id="jaeger-badge" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#8b5cf6;strokeColor=none;fontColor=#ffffff;fontSize=12;fontStyle=1" value="Jaeger" vertex="1">
+          <mxGeometry height="26" width="82" x="1157" y="223" as="geometry" />
+        </mxCell>
+        <mxCell id="rabbit" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;shadow=1;fillColor=#fff1e6;strokeColor=#ff6600;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#3b1700" value="RabbitMQ&#xa;AMQP 5672 | UI 15672&#xa;&#xa;Durable queues keep async events available while consumers restart." vertex="1">
+          <mxGeometry height="176" width="380" x="560" y="555" as="geometry" />
+        </mxCell>
+        <mxCell id="rabbit-badge" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ff6600;strokeColor=none;fontColor=#ffffff;fontSize=12;fontStyle=1" value="RabbitMQ" vertex="1">
+          <mxGeometry height="26" width="108" x="575" y="567" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-app-consul" edge="1" parent="p1" source="app-group" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#e91e63;dashed=1;dashPattern=8 5" target="consul" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-consul" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#f9a8d4;fontColor=#9d174d;fontSize=12;fontStyle=1" value="register services&#xa;and health checks" vertex="1">
+          <mxGeometry height="48" width="132" x="407" y="232" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-app-jaeger" edge="1" parent="p1" source="app-group" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#8b5cf6;dashed=1;dashPattern=8 5" target="jaeger" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-jaeger" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#c4b5fd;fontColor=#6d28d9;fontSize=12;fontStyle=1" value="export traces&#xa;through OTLP" vertex="1">
+          <mxGeometry height="48" width="122" x="976" y="228" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-app-rabbit" edge="1" parent="p1" source="app-group" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#f97316;dashed=1;dashPattern=8 5;edgeStyle=orthogonalEdgeStyle" target="rabbit" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-rabbit" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#ffffff;strokeColor=#fed7aa;fontColor=#9a3412;fontSize=12;fontStyle=1" value="publish / consume&#xa;domain events" vertex="1">
+          <mxGeometry height="48" width="132" x="763" y="453" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
