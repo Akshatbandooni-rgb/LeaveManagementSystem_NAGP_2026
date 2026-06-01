@@ -1,4 +1,4 @@
-# Point 1 - Microservices Design Document
+# Microservices Design Document
 
 ## Project Name
 
