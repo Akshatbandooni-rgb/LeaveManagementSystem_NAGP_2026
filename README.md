@@ -346,6 +346,15 @@ curl -i http://localhost:3000/health
 
 If startup fails immediately, first verify that `.env` exists and contains non-empty `JWT_SECRET` and `INTERNAL_SECRET` values. Those two variables are required by the API Gateway, User Service, and Leave Service during boot.
 
+If RabbitMQ fails with an Erlang cookie permission error such as `Error when reading /var/lib/rabbitmq/.erlang.cookie: eacces`, remove the old RabbitMQ volume and start again:
+
+```bash
+docker-compose down -v
+docker-compose up --build
+```
+
+This deletes local RabbitMQ container data only. The application itself uses in-memory service data, so there is no project database to migrate.
+
 ### 7b - Local Development (without Docker for app services)
 
 Infrastructure still runs in Docker. The four Node.js app services can run locally with `npm run dev`.
