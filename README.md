@@ -273,7 +273,21 @@ Rancher Desktop is a free Docker-compatible option. Docker Desktop also works.
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | `http://localhost:4318` | Jaeger OTLP endpoint for distributed tracing | API Gateway, User Service, Leave Service, Notification Service |
 | `PORT` | No | Varies by service | HTTP port the service listens on | Each service |
 
-Create this `.env` file at the monorepo root for local development:
+The `.env` file is required at runtime and is intentionally not committed to Git. A fresh clone contains `.env.example`, but it does not contain `.env`. Create `.env` at the monorepo root before starting the system.
+
+On macOS, Linux, or Git Bash:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The checked-in `.env.example` contains demo-safe local values:
 
 ```bash
 JWT_SECRET=dev-jwt-secret-local
@@ -283,7 +297,7 @@ CONSUL_URL=http://localhost:8500
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 ```
 
-Inside Docker, RabbitMQ and Consul are reached through Docker service names. `RABBITMQ_URL` becomes `amqp://admin:admin@rabbitmq:5672` and `CONSUL_URL` becomes `http://consul:8500`. The `docker-compose.yml` file handles this override automatically for containers.
+Inside Docker, RabbitMQ and Consul are reached through Docker service names. `RABBITMQ_URL` becomes `amqp://admin:admin@rabbitmq:5672` and `CONSUL_URL` becomes `http://consul:8500`. The `docker-compose.yml` file handles this override automatically for containers. `JWT_SECRET` and `INTERNAL_SECRET` still come from `.env`, so the services will not start correctly on another machine until `.env` exists.
 
 ## Section 7 - Running the System
 
@@ -292,18 +306,22 @@ Inside Docker, RabbitMQ and Consul are reached through Docker service names. `RA
 1. Clone the repository and enter the project folder:
 
 ```bash
-git clone <GITHUB_REPO_LINK>
+git clone https://github.com/Akshatbandooni-rgb/LeaveManagementSystem_NAGP_2026.git
 cd leave-management-system
 ```
 
-2. Create `.env` at the root:
+2. Create `.env` at the root. This step is required on a fresh evaluator machine because `.env` is ignored by Git:
+
+On macOS, Linux, or Git Bash:
 
 ```bash
-JWT_SECRET=dev-jwt-secret-local
-INTERNAL_SECRET=dev-internal-secret-local
-RABBITMQ_URL=amqp://admin:admin@localhost:5672
-CONSUL_URL=http://localhost:8500
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 3. Start everything:
@@ -311,6 +329,8 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 ```bash
 docker-compose up --build
 ```
+
+This command builds all four application images locally from the Dockerfiles in the repository. Node.js and `npm install` are not required on the evaluator machine for this Docker-based path because the build happens inside Docker.
 
 4. Wait until all service health checks report healthy:
 
@@ -323,6 +343,8 @@ docker-compose ps
 ```bash
 curl -i http://localhost:3000/health
 ```
+
+If startup fails immediately, first verify that `.env` exists and contains non-empty `JWT_SECRET` and `INTERNAL_SECRET` values. Those two variables are required by the API Gateway, User Service, and Leave Service during boot.
 
 ### 7b - Local Development (without Docker for app services)
 
@@ -870,33 +892,72 @@ Alice and Bob have leave balances available immediately when Leave Service start
 
 ## Section 11 - Testing with Postman
 
-A complete Postman collection is included at `postman-collection.json` in the root.
+A complete Postman collection is included at `postman-collection.json` in the project root.
+
+### Import Collection
 
 1. Open Postman.
-2. Click `Import`.
+2. Click **Import**.
 3. Select `postman-collection.json` from the repository root.
-4. Create a Postman environment named `Leave Management Local`.
-5. Add `baseUrl` with value `http://localhost:3000`.
-6. Select the `Leave Management Local` environment.
-7. Run `Login - Alice` first. The test script saves the token to `employeeToken`.
-8. Run `Login - Charlie` next. The test script saves the token to `managerToken`.
-9. Run the remaining requests. They automatically use `employeeToken` or `managerToken`.
 
-Recommended testing sequence:
+### Create Environment
 
-1. Login as Alice and verify a token is received.
-2. View Alice's balance and verify `CASUAL: 12`, `SICK: 10`, and `PRIVILEGE: 15`.
-3. Apply for leave and note the leave ID returned in the `id` field.
-4. Try applying for overlapping dates and verify HTTP `409`.
-5. Try applying with insufficient balance and verify HTTP `422`.
-6. Login as Charlie and verify a manager token is received.
-7. View pending requests and verify Alice's request appears.
-8. Approve Alice's leave and verify the status changes to `APPROVED`.
-9. View Alice's balance again and verify the selected leave balance decreased by the number of approved days.
-10. Apply another leave as Alice and reject it as Charlie with a reason.
+Create a Postman environment named **Leave Management Local**.
+
+Add the following variables **exactly before running anything**:
+
+| Variable | Value |
+| --- | --- |
+| `gatewayBaseUrl` | `http://localhost:3000` |
+| `managerUserId` | `mgr-001` |
+
+### Variables Set Automatically
+
+The following variables are set automatically by the **Tests** scripts as you run requests:
+
+- `employeeToken`
+- `managerToken`
+- `pendingLeaveRequestId`
+- `rejectedLeaveRequestId`
+- `newUserToken`
+- `newUserId`
+
+Do **not** set these manually.
+
+### Select Environment
+
+Select **Leave Management Local** as the active Postman environment before sending any request.
+
+### Required Run Order
+
+Run the requests in the following exact sequence. This order is required for everything to work because later requests depend on values captured from earlier responses.
+
+1. **Login - Alice (Employee)** — sets `employeeToken`
+2. **Login - Charlie (Manager)** — sets `managerToken`
+3. **Apply Leave - Success** — sets `pendingLeaveRequestId`
+4. **Apply Leave To Reject Later** — sets `rejectedLeaveRequestId`
+
+After these four requests, you can run all other requests in any order.
+
+### Recommended Verification Flow
+
+1. Run **Login - Alice** and verify a token is received.
+2. View Alice's leave balance and verify:
+   - `CASUAL: 12`
+   - `SICK: 10`
+   - `PRIVILEGE: 15`
+3. Run **Apply Leave - Success** and verify the leave ID is stored in `pendingLeaveRequestId`.
+4. Run **Apply Leave To Reject Later** and verify the leave ID is stored in `rejectedLeaveRequestId`.
+5. Try applying overlapping dates and verify HTTP `409`.
+6. Try applying with insufficient balance and verify HTTP `422`.
+7. Run **Login - Charlie** and verify `managerToken` is received.
+8. View pending requests and verify Alice's request appears.
+9. Approve Alice's leave and verify the status changes to `APPROVED`.
+10. Reject the second leave request with a reason and verify the status changes to `REJECTED`.
 11. View Alice's leave history and verify both `APPROVED` and `REJECTED` requests appear.
 12. Try approving with Alice's employee token and verify HTTP `403`.
 13. Try approving an already approved leave and verify HTTP `409`.
+
 
 ## Section 12 - Cross-Cutting Concerns
 
@@ -998,15 +1059,28 @@ RabbitMQ topology:
 | Docker image - User Service | `(leave placeholder: docker.io/<username>/leave-user-service:<tag>)` |
 | Docker image - Leave Service | `(leave placeholder: docker.io/<username>/leave-service:<tag>)` |
 | Docker image - Notification Service | `(leave placeholder: docker.io/<username>/leave-notification-service:<tag>)` |
-| Single command to run everything | `docker-compose up --build` |
+| Single command to run everything after `.env` is created | `docker-compose up --build` |
 | Demo video link | `(leave placeholder)` |
 
-Evaluator quick start:
+The Docker image rows above are placeholders until the four service images are pushed to Docker Hub. The provided `docker-compose.yml` is still fully runnable from source because it uses `build:` entries for every application service. If Docker Hub images are published, replace the placeholders with the real image paths and optionally add `image:` entries to `docker-compose.yml` or provide a separate compose file for pulling images.
+
+Evaluator quick start from a fresh clone:
 
 ```bash
-git clone <GITHUB_REPO_LINK>
+git clone https://github.com/Akshatbandooni-rgb/LeaveManagementSystem_NAGP_2026.git
 cd leave-management-system
+cp .env.example .env
 docker-compose up --build
 ```
 
+On Windows PowerShell, use `Copy-Item .env.example .env` instead of `cp .env.example .env`.
+
 After startup, open `http://localhost:3000/health`, import `postman-collection.json`, login as Alice and Charlie, and run the documented Postman sequence.
+
+Fresh machine checklist:
+
+1. Docker Desktop or Rancher Desktop is running.
+2. Ports `3000`, `5672`, `8500`, `15672`, `16686`, and `4318` are free.
+3. `.env` exists at the repository root.
+4. `.env` contains non-empty `JWT_SECRET` and `INTERNAL_SECRET` values.
+5. Run `docker-compose up --build` from the repository root.

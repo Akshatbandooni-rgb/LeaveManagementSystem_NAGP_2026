@@ -15,3 +15,6 @@ dist/
 **/*.js
 **/*.js.map
 **/*.d.ts
+
+# hand-written ambient declarations required by service builds
+!services/*/src/types/consul.d.ts
