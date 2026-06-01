@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inter-Service Communication — Leave Management System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #0f1623;
+    --border: #1e2d45;
+    --border-bright: #2a3f5f;
+
+    --gateway: #8b5cf6;
+    --user-svc: #3b82f6;
+    --leave-svc: #10b981;
+    --notif-svc: #f97316;
+    --rabbitmq: #ef4444;
+    --consul: #06b6d4;
+    --client: #f59e0b;
+
+    --sync: #60a5fa;
+    --async: #fb923c;
+    --discovery: #22d3ee;
+
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #334155;
+
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 36px 52px 28px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(16,185,129,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    position: relative;
+  }
+  header h1 {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  header h1 .accent { color: var(--gateway); }
+  header h1 .accent2 { color: var(--leave-svc); }
+  .header-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .doc-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .meta-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .toc {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    position: relative;
+  }
+  .toc-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .toc-item:hover { border-color: var(--gateway); color: var(--text); }
+
+  /* ── LAYOUT ── */
+  .content { padding: 0 52px 60px; }
+
+  /* ── SECTION ── */
+  .section {
+    padding: 44px 0 0;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    min-width: 28px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── PROSE ── */
+  .prose {
+    font-size: 13.5px;
+    color: #94a3b8;
+    line-height: 1.8;
+    max-width: 860px;
+    margin-bottom: 24px;
+  }
+  .prose strong { color: var(--text); font-weight: 600; }
+  .prose code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #93c5fd;
+  }
+
+  /* ── PATTERN CARDS ── */
+  .pattern-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .pattern-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pattern-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
+  }
+  .pattern-card.sync::before { background: var(--sync); }
+  .pattern-card.async::before { background: var(--async); }
+  .pattern-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .pattern-badge.sync { background: #1e3a5f; color: var(--sync); }
+  .pattern-badge.async { background: #431407; color: var(--async); }
+  .pattern-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .pattern-desc {
+    font-size: 12.5px;
+    color: #94a3b8;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .pattern-when {
+    font-size: 11.5px;
+    color: #64748b;
+    font-style: italic;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+
+  /* ── FLOW CARDS ── */
+  .flow-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .flow-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .flow-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .flow-header:hover { background: var(--surface2); }
+  .flow-method {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .flow-method.get { background: #1d4ed8; color: #93c5fd; }
+  .flow-method.post { background: #15803d; color: #86efac; }
+  .flow-method.patch { background: #92400e; color: #fcd34d; }
+  .flow-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .flow-summary {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+  .flow-chevron {
+    color: var(--text-dim);
+    font-size: 10px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .flow-card.open .flow-chevron { transform: rotate(90deg); }
+  .flow-body {
+    display: none;
+    border-top: 1px solid var(--border);
+  }
+  .flow-card.open .flow-body { display: block; }
+
+  .flow-body-inner {
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .flow-col-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .flow-step {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  .flow-step-num {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 1px;
+  }
+  .flow-step-text {
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+  .flow-step-text strong { color: var(--text); }
+  .flow-step-text code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--surface3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #93c5fd;
+  }
+  .error-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .error-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .error-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .e400 { background: #422006; color: #fb923c; }
+  .e401 { background: #431407; color: #fca5a5; }
+  .e403 { background: #4c1d95; color: #c4b5fd; }
+  .e404 { background: #1e3a8a; color: #93c5fd; }
+  .e409 { background: #065f46; color: #6ee7b7; }
+  .e422 { background: #78350f; color: #fcd34d; }
+  .e503 { background: #312e81; color: #a5b4fc; }
+  .error-desc { color: #64748b; }
+
+  /* ── SEQUENCE DIAGRAM ── */
+  .seq-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .seq-title-bar {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .seq-title-bar span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+  .seq-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  /* ── EVENT CARDS ── */
+  .events-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .event-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .event-name-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 5px;
+  }
+  .event-body {
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .event-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 8px;
+    font-size: 11.5px;
+    align-items: flex-start;
+  }
+  .event-key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding-top: 1px;
+  }
+  .event-val { color: #cbd5e1; line-height: 1.5; }
+  .event-val code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--surface3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #93c5fd;
+  }
+  .payload-block {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.8;
+    margin-top: 4px;
+  }
+  .payload-block .pk { color: #93c5fd; }
+  .payload-block .pv { color: #86efac; }
+  .payload-block .ps { color: #64748b; }
+
+  /* ── CONSUL SECTION ── */
+  .consul-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .consul-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .consul-card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--consul);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .consul-step {
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.7;
+    margin-bottom: 6px;
+  }
+  .consul-step strong { color: var(--text); }
+  .consul-step code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--surface3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #22d3ee;
+  }
+
+  /* ── CIRCUIT BREAKER ── */
+  .cb-states {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .cb-state {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+  .cb-indicator {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .cb-state-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .cb-state-desc {
+    font-size: 11.5px;
+    color: #64748b;
+    line-height: 1.6;
+  }
+  .cb-config {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .cb-param {
+    text-align: center;
+  }
+  .cb-param-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--purple);
+    margin-bottom: 4px;
+  }
+  .cb-param-name {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .cb-param-note {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── CORRELATION ID ── */
+  .corr-flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .corr-row {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--border);
+  }
+  .corr-row:last-child { border-bottom: none; }
+  .corr-service {
+    width: 160px;
+    flex-shrink: 0;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-right: 1px solid var(--border);
+  }
+  .corr-svc-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .corr-action {
+    padding: 14px 16px;
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .corr-action strong { color: var(--text); }
+  .corr-action code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--surface3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #fbbf24;
+  }
+  .corr-log {
+    padding: 14px 16px;
+    width: 320px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: #475569;
+    line-height: 1.6;
+    background: var(--surface3);
+  }
+  .corr-log .hl { color: #fbbf24; }
+
+  /* ── ASSUMPTIONS ── */
+  .assumptions-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .assumption-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .assumption-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gateway);
+    min-width: 24px;
+  }
+  .assumption-content {}
+  .assumption-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .assumption-desc {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+  }
+  .assumption-desc code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    background: var(--surface3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #93c5fd;
+  }
+  .assumption-impact {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 6px;
+  }
+  .impact-design { background: #1e3a8a; color: #93c5fd; }
+  .impact-trade { background: #431407; color: #fb923c; }
+  .impact-mvp { background: #14532d; color: #6ee7b7; }
+  .impact-security { background: #4c1d95; color: #c4b5fd; }
+
+  /* ── HEADERS REFERENCE ── */
+  .headers-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 12px;
+  }
+  .headers-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .headers-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    font-size: 11.5px;
+    color: #94a3b8;
+  }
+  .headers-table tr:last-child td { border-bottom: none; }
+  .headers-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #93c5fd;
+  }
+  .headers-table tr:hover td { background: var(--surface2); }
+
+  /* ── PRINT ── */
+  .actions {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 50;
+  }
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: var(--border); }
+
+  @media print {
+    .actions { display: none; }
+  }
+
+  /* divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="actions">
+  <button class="btn" onclick="window.print()">⬇ Export PDF</button>
+</div>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1>Inter-Service <span class="accent">Communication</span><br>
+      <span class="accent2">Writeup</span> &amp; Assumptions</h1>
+      <div class="header-sub">Leave Management System · Microservices Architecture · Node.js + TypeScript</div>
+    </div>
+    <div class="doc-meta">
+      <span class="meta-tag">Document Type: Technical Design</span>
+      <span class="meta-tag">Services: 4 Application + 3 Infrastructure</span>
+      <span class="meta-tag">Patterns: Sync HTTP + Async Events</span>
+      <span class="meta-tag">Version: 1.0</span>
+    </div>
+  </div>
+  <nav class="toc">
+    <a class="toc-item" href="#patterns">01 · Communication Patterns</a>
+    <a class="toc-item" href="#sync">02 · Synchronous HTTP Flows</a>
+    <a class="toc-item" href="#async">03 · Asynchronous Events</a>
+    <a class="toc-item" href="#discovery">04 · Service Discovery</a>
+    <a class="toc-item" href="#circuit">05 · Circuit Breaker</a>
+    <a class="toc-item" href="#correlation">06 · Correlation ID</a>
+    <a class="toc-item" href="#headers">07 · Header Contract</a>
+    <a class="toc-item" href="#assumptions">08 · Assumptions</a>
+  </nav>
+</header>
+
+<div class="content">
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 1 — COMMUNICATION PATTERNS
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="patterns">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Communication Patterns</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      This system uses <strong>two distinct communication patterns</strong>, each chosen for specific reasons
+      based on whether the caller needs an immediate answer and whether failure of the downstream operation
+      should affect the caller's outcome.
+    </p>
+
+    <div class="pattern-grid">
+      <div class="pattern-card sync">
+        <span class="pattern-badge sync">Synchronous · Request-Response</span>
+        <div class="pattern-title">HTTP via API Gateway</div>
+        <div class="pattern-desc">
+          The caller sends a request and waits for a response before proceeding.
+          The response directly determines the outcome returned to the client.
+          All external client traffic enters through the API Gateway only — no client
+          ever speaks directly to a business service. The Gateway validates JWT,
+          enriches headers, applies the circuit breaker, and proxies to the correct
+          downstream service discovered via Consul.
+        </div>
+        <div class="pattern-when">
+          <strong>Used when:</strong> The client needs an immediate answer. Examples: login
+          (client needs a token now), apply leave (client needs to know if it succeeded or failed),
+          approve leave (manager needs confirmation). Any operation where the result is returned
+          to the user in real time.
+        </div>
+      </div>
+
+      <div class="pattern-card async">
+        <span class="pattern-badge async">Asynchronous · Event-Driven</span>
+        <div class="pattern-title">RabbitMQ Message Broker</div>
+        <div class="pattern-desc">
+          The publisher emits an event to RabbitMQ and immediately continues — it does not
+          wait for any consumer to process the message. The consumer processes the event
+          independently and at its own pace. If the consumer is temporarily down, RabbitMQ
+          holds the message in a durable queue until the consumer recovers. The publisher's
+          operation succeeds regardless of consumer availability.
+        </div>
+        <div class="pattern-when">
+          <strong>Used when:</strong> The result of the side-effect must not block or
+          endanger the main operation. Examples: sending notifications (if notification
+          logging fails, the leave approval must still succeed), initializing leave
+          balances (if Leave Service is slow, User Service must not fail user creation).
+        </div>
+      </div>
+    </div>
+
+    <p class="prose">
+      The guiding principle for the pattern choice is: <strong>if a downstream failure should
+      roll back or fail the current operation, use synchronous HTTP. If a downstream failure
+      should have zero effect on the current operation, use async RabbitMQ.</strong>
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 2 — SYNCHRONOUS HTTP FLOWS
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="sync">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Synchronous HTTP Communication Flows</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      Every synchronous call originates from the <strong>API Gateway</strong>. No service calls another
+      service directly — all inter-service HTTP traffic is routed and mediated by the Gateway.
+      This means a single point of authentication, enrichment, and circuit-breaking for all traffic.
+      Click any endpoint below to expand the full flow.
+    </p>
+
+    <div class="flow-list">
+
+      <!-- LOGIN -->
+      <div class="flow-card" id="fc-login">
+        <div class="flow-header" onclick="toggleFlow('fc-login')">
+          <span class="flow-method post">POST</span>
+          <span class="flow-path">/auth/login</span>
+          <span class="flow-summary">Public · No JWT required · Handled by User Service</span>
+          <span class="flow-chevron">▶</span>
+        </div>
+        <div class="flow-body">
+          <div class="flow-body-inner">
+            <div>
+              <div class="flow-col-title">Request Flow</div>
+              <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-text">Client sends <code>POST /auth/login</code> with <code>{ email, password }</code> body</div></div>
+              <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-text">Gateway <strong>correlationId middleware</strong> generates UUID, attaches to request and response header</div></div>
+              <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-text">Gateway <strong>auth middleware</strong> checks if path is whitelisted — <code>/auth/login</code> is public, <strong>skips JWT validation</strong></div></div>
+              <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-text">Gateway resolves <strong>user-service</strong> address from Consul, proxies request with <code>X-Correlation-Id</code> header only</div></div>
+              <div class="flow-step"><div class="flow-step-num">5</div><div class="flow-step-text">User Service validates body with Zod schema, finds user by email in Map</div></div>
+              <div class="flow-step"><div class="flow-step-num">6</div><div class="flow-step-text"><code>bcryptjs.compareSync(password, passwordHash)</code> — constant-time comparison prevents timing attacks</div></div>
+              <div class="flow-step"><div class="flow-step-num">7</div><div class="flow-step-text"><code>jsonwebtoken.sign({ userId, role, email }, jwtSecret, { expiresIn: '8h' })</code></div></div>
+              <div class="flow-step"><div class="flow-step-num">8</div><div class="flow-step-text">Returns <code>200 { token, userId, role, expiresIn }</code> through Gateway to client</div></div>
+            </div>
+            <div>
+              <div class="flow-col-title">Failure Paths</div>
+              <div class="error-list">
+                <div class="error-item"><span class="error-code e400">400</span><span class="error-desc">Zod validation fails — email not valid format, password under 6 chars. Returns field-level errors array.</span></div>
+                <div class="error-item"><span class="error-code e401">401</span><span class="error-desc">Email not found in user Map OR password does not match bcrypt hash. Same error message for both — never reveal which field is wrong.</span></div>
+                <div class="error-item"><span class="error-code e503">503</span><span class="error-desc">Circuit breaker is OPEN for user-service — returns instantly without hitting User Service. Happens after sustained failures.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APPLY LEAVE -->
+      <div class="flow-card" id="fc-apply">
+        <div class="flow-header" onclick="toggleFlow('fc-apply')">
+          <span class="flow-method post">POST</span>
+          <span class="flow-path">/leaves</span>
+          <span class="flow-summary">Employee only · 5 validation layers · Publishes leave.applied event</span>
+          <span class="flow-chevron">▶</span>
+        </div>
+        <div class="flow-body">
+          <div class="flow-body-inner">
+            <div>
+              <div class="flow-col-title">Request Flow</div>
+              <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-text">Client sends <code>POST /leaves</code> with <code>Authorization: Bearer &lt;jwt&gt;</code></div></div>
+              <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-text">Gateway validates JWT — extracts <code>userId</code> and <code>role</code> from payload</div></div>
+              <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-text">Gateway adds <strong>X-User-Id, X-User-Role, X-Internal-Secret, X-Correlation-Id</strong> headers. Strips Authorization header.</div></div>
+              <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-text">Leave Service verifies <code>X-Internal-Secret</code> — rejects if not from Gateway</div></div>
+              <div class="flow-step"><div class="flow-step-num">5</div><div class="flow-step-text"><strong>requireRole('EMPLOYEE')</strong> — checks X-User-Role === EMPLOYEE</div></div>
+              <div class="flow-step"><div class="flow-step-num">6</div><div class="flow-step-text">Zod validation: leaveType enum, YYYY-MM-DD regex, positive integer days, min 10 char reason, UUID managerId</div></div>
+              <div class="flow-step"><div class="flow-step-num">7</div><div class="flow-step-text">Business rules in order: <strong>past date → date range → balance check → overlap check</strong></div></div>
+              <div class="flow-step"><div class="flow-step-num">8</div><div class="flow-step-text">Save to leaveStore Map with status <strong>PENDING</strong>, publish <code>leave.applied</code> event (non-blocking)</div></div>
+              <div class="flow-step"><div class="flow-step-num">9</div><div class="flow-step-text">Returns <code>201 { leaveRequest }</code></div></div>
+            </div>
+            <div>
+              <div class="flow-col-title">Failure Paths</div>
+              <div class="error-list">
+                <div class="error-item"><span class="error-code e401">401</span><span class="error-desc">Missing token, expired token, invalid JWT signature.</span></div>
+                <div class="error-item"><span class="error-code e403">403</span><span class="error-desc">Role is MANAGER — managers cannot apply for leave. requireRole middleware rejects.</span></div>
+                <div class="error-item"><span class="error-code e400">400</span><span class="error-desc">startDate in the past. OR startDate > endDate. OR Zod schema fails.</span></div>
+                <div class="error-item"><span class="error-code e422">422</span><span class="error-desc">balance[leaveType] &lt; numberOfDays. Response includes available and requested counts.</span></div>
+                <div class="error-item"><span class="error-code e409">409</span><span class="error-desc">Overlap detected: another PENDING or APPROVED leave exists where date ranges intersect.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APPROVE LEAVE -->
+      <div class="flow-card" id="fc-approve">
+        <div class="flow-header" onclick="toggleFlow('fc-approve')">
+          <span class="flow-method patch">PATCH</span>
+          <span class="flow-path">/leaves/:id/approve</span>
+          <span class="flow-summary">Manager only · Atomic deduction · Publishes leave.approved event</span>
+          <span class="flow-chevron">▶</span>
+        </div>
+        <div class="flow-body">
+          <div class="flow-body-inner">
+            <div>
+              <div class="flow-col-title">Request Flow</div>
+              <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-text">Manager sends <code>PATCH /leaves/:id/approve</code> with Bearer token</div></div>
+              <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-text">Gateway validates JWT, enriches headers, checks circuit breaker for leave-service</div></div>
+              <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-text">Leave Service verifies internal secret, sets req.user from X-User-* headers</div></div>
+              <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-text"><strong>requireRole('MANAGER')</strong> check passes</div></div>
+              <div class="flow-step"><div class="flow-step-num">5</div><div class="flow-step-text"><code>leaveRepo.findById(id)</code> — 404 if not found</div></div>
+              <div class="flow-step"><div class="flow-step-num">6</div><div class="flow-step-text"><strong>Ownership check:</strong> <code>leaveRequest.managerId === req.user.userId</code> — 403 if not matching. This is resource-level auth, not just role auth.</div></div>
+              <div class="flow-step"><div class="flow-step-num">7</div><div class="flow-step-text"><strong>Idempotency guard:</strong> status must be PENDING — 409 if already APPROVED or REJECTED</div></div>
+              <div class="flow-step"><div class="flow-step-num">8</div><div class="flow-step-text"><strong>ATOMIC BLOCK:</strong> <code>balanceRepo.deductBalance()</code> then <code>leaveRepo.update(APPROVED)</code> — fully synchronous, no await between steps. Node.js event loop guarantees no interleaving.</div></div>
+              <div class="flow-step"><div class="flow-step-num">9</div><div class="flow-step-text">Publishes <code>leave.approved</code> to RabbitMQ (non-blocking, error swallowed)</div></div>
+              <div class="flow-step"><div class="flow-step-num">10</div><div class="flow-step-text">Returns <code>200 { updatedLeaveRequest }</code></div></div>
+            </div>
+            <div>
+              <div class="flow-col-title">Failure Paths</div>
+              <div class="error-list">
+                <div class="error-item"><span class="error-code e401">401</span><span class="error-desc">Missing or invalid JWT at Gateway.</span></div>
+                <div class="error-item"><span class="error-code e403">403</span><span class="error-desc">Role is EMPLOYEE (role check). OR valid manager token but this leave belongs to a different manager (ownership check). Same 403 response — do not reveal which rule failed.</span></div>
+                <div class="error-item"><span class="error-code e404">404</span><span class="error-desc">No leave request found with given ID.</span></div>
+                <div class="error-item"><span class="error-code e409">409</span><span class="error-desc">Leave status is not PENDING — already approved or rejected. Idempotency protection.</span></div>
+                <div class="error-item"><span class="error-code e422">422</span><span class="error-desc">Balance exhausted between application time and approval time (edge case: another leave of same type was approved in between).</span></div>
+                <div class="error-item"><span class="error-code e503">503</span><span class="error-desc">Circuit breaker OPEN — instant rejection, no call to Leave Service.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REJECT LEAVE -->
+      <div class="flow-card" id="fc-reject">
+        <div class="flow-header" onclick="toggleFlow('fc-reject')">
+          <span class="flow-method patch">PATCH</span>
+          <span class="flow-path">/leaves/:id/reject</span>
+          <span class="flow-summary">Manager only · No balance change · Publishes leave.rejected event</span>
+          <span class="flow-chevron">▶</span>
+        </div>
+        <div class="flow-body">
+          <div class="flow-body-inner">
+            <div>
+              <div class="flow-col-title">Request Flow</div>
+              <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-text">Same Gateway flow as approve — JWT validation, header enrichment, circuit breaker check</div></div>
+              <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-text">requireRole MANAGER → findById → ownership check → PENDING status check</div></div>
+              <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-text">Zod validates body: <code>rejectionReason</code> minimum 5 characters</div></div>
+              <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-text"><code>leaveRepo.update(id, { status: REJECTED, rejectionReason })</code> — balance is NOT touched on rejection</div></div>
+              <div class="flow-step"><div class="flow-step-num">5</div><div class="flow-step-text">Publishes <code>leave.rejected</code> event with rejectionReason in payload (non-blocking)</div></div>
+              <div class="flow-step"><div class="flow-step-num">6</div><div class="flow-step-text">Returns <code>200 { updatedLeaveRequest }</code> with rejectionReason present</div></div>
+            </div>
+            <div>
+              <div class="flow-col-title">Failure Paths</div>
+              <div class="error-list">
+                <div class="error-item"><span class="error-code e400">400</span><span class="error-desc">rejectionReason missing or under 5 characters.</span></div>
+                <div class="error-item"><span class="error-code e403">403</span><span class="error-desc">Wrong role or wrong manager ownership.</span></div>
+                <div class="error-item"><span class="error-code e404">404</span><span class="error-desc">Leave request not found.</span></div>
+                <div class="error-item"><span class="error-code e409">409</span><span class="error-desc">Leave is not PENDING — already processed.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW BALANCE -->
+      <div class="flow-card" id="fc-balance">
+        <div class="flow-header" onclick="toggleFlow('fc-balance')">
+          <span class="flow-method get">GET</span>
+          <span class="flow-path">/balances/my-balance</span>
+          <span class="flow-summary">Employee only · Reads own balance from Leave Service Map</span>
+          <span class="flow-chevron">▶</span>
+        </div>
+        <div class="flow-body">
+          <div class="flow-body-inner">
+            <div>
+              <div class="flow-col-title">Request Flow</div>
+              <div class="flow-step"><div class="flow-step-num">1</div><div class="flow-step-text">Employee token validated at Gateway, X-User-Id set from JWT payload</div></div>
+              <div class="flow-step"><div class="flow-step-num">2</div><div class="flow-step-text">Leave Service reads <code>req.user.userId</code> from X-User-Id header</div></div>
+              <div class="flow-step"><div class="flow-step-num">3</div><div class="flow-step-text"><code>balanceRepo.findByEmployeeId(userId)</code> — O(1) Map lookup</div></div>
+              <div class="flow-step"><div class="flow-step-num">4</div><div class="flow-step-text">Returns <code>200 { employeeId, CASUAL, SICK, PRIVILEGE }</code></div></div>
+            </div>
+            <div>
+              <div class="flow-col-title">Failure Paths</div>
+              <div class="error-list">
+                <div class="error-item"><span class="error-code e401">401</span><span class="error-desc">No token or invalid token.</span></div>
+                <div class="error-item"><span class="error-code e403">403</span><span class="error-desc">Manager token used — managers do not have a leave balance, this endpoint requires EMPLOYEE role.</span></div>
+                <div class="error-item"><span class="error-code e404">404</span><span class="error-desc">Balance not initialized yet — rare edge case if user.created event has not been consumed yet.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 3 — ASYNC EVENT FLOWS
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="async">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Asynchronous Event Communication</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      RabbitMQ is configured with <strong>two topic exchanges</strong>, both declared durable.
+      All queues are declared durable and messages are published with <code>persistent: true</code>,
+      meaning messages survive a RabbitMQ restart. Consumers use <strong>manual acknowledgement</strong> —
+      a message is only removed from the queue after the consumer explicitly acks it, preventing
+      message loss if the consumer crashes mid-processing.
+    </p>
+
+    <div class="events-grid">
+
+      <div class="event-card">
+        <div class="event-header">
+          <span class="event-name-badge" style="background:#431407;color:#fb923c">user.created</span>
+          <span style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:'JetBrains Mono',monospace">user.events exchange</span>
+        </div>
+        <div class="event-body">
+          <div class="event-row"><span class="event-key">Trigger</span><span class="event-val">New EMPLOYEE user saved in User Service. MANAGER creation does not publish this event.</span></div>
+          <div class="event-row"><span class="event-key">Publisher</span><span class="event-val">User Service — after <code>userRepo.save()</code> succeeds</span></div>
+          <div class="event-row"><span class="event-key">Consumer</span><span class="event-val">Leave Service — queue: <code>leave-service.user.created</code></span></div>
+          <div class="event-row"><span class="event-key">Effect</span><span class="event-val"><code>balanceRepo.initializeBalance(userId)</code> — idempotent, checks if balance already exists before creating</span></div>
+          <div class="event-row"><span class="event-key">On Failure</span><span class="event-val">Nack with requeue:false. Message goes to dead-letter queue. Balance not initialized — employee gets 404 on first balance request.</span></div>
+          <div class="event-row"><span class="event-key">Payload</span><span class="event-val"></span></div>
+          <div class="payload-block">
+            {<br>
+            &nbsp;&nbsp;<span class="pk">"eventType"</span>: <span class="pv">"user.created"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"userId"</span>: <span class="pv">"emp-004"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"role"</span>: <span class="pv">"EMPLOYEE"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"correlationId"</span>: <span class="pv">"req-7f3a9b..."</span><br>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="event-header">
+          <span class="event-name-badge" style="background:#14532d;color:#4ade80">leave.applied</span>
+          <span style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:'JetBrains Mono',monospace">leave.events exchange</span>
+        </div>
+        <div class="event-body">
+          <div class="event-row"><span class="event-key">Trigger</span><span class="event-val">Leave request successfully saved with PENDING status in Leave Service</span></div>
+          <div class="event-row"><span class="event-key">Publisher</span><span class="event-val">Leave Service — after <code>leaveRepo.save()</code> returns</span></div>
+          <div class="event-row"><span class="event-key">Consumer</span><span class="event-val">Notification Service — queue: <code>notification.queue</code></span></div>
+          <div class="event-row"><span class="event-key">Effect</span><span class="event-val">Logs structured notification: employee applied, manager notified. No email sent.</span></div>
+          <div class="event-row"><span class="event-key">On Failure</span><span class="event-val">Publish error is caught and logged at ERROR level. Leave creation still returns 201 — notification failure does not affect the main transaction.</span></div>
+          <div class="event-row"><span class="event-key">Payload</span><span class="event-val"></span></div>
+          <div class="payload-block">
+            {<br>
+            &nbsp;&nbsp;<span class="pk">"eventType"</span>: <span class="pv">"leave.applied"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"leaveRequest"</span>: <span class="ps">{ ...fullLeaveRequestObject }</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"managerId"</span>: <span class="pv">"mgr-001"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"correlationId"</span>: <span class="pv">"req-7f3a9b..."</span><br>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="event-header">
+          <span class="event-name-badge" style="background:#1e3a8a;color:#93c5fd">leave.approved</span>
+          <span style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:'JetBrains Mono',monospace">leave.events exchange</span>
+        </div>
+        <div class="event-body">
+          <div class="event-row"><span class="event-key">Trigger</span><span class="event-val">Leave status updated to APPROVED and balance deducted (both happen atomically before publish)</span></div>
+          <div class="event-row"><span class="event-key">Publisher</span><span class="event-val">Leave Service — after atomic approve block completes</span></div>
+          <div class="event-row"><span class="event-key">Consumer</span><span class="event-val">Notification Service — same <code>notification.queue</code></span></div>
+          <div class="event-row"><span class="event-key">Effect</span><span class="event-val">Logs: Leave APPROVED for employee X, type Y, dates Z</span></div>
+          <div class="event-row"><span class="event-key">On Failure</span><span class="event-val">Same as leave.applied — publish error swallowed. Approval already committed.</span></div>
+          <div class="event-row"><span class="event-key">Payload</span><span class="event-val"></span></div>
+          <div class="payload-block">
+            {<br>
+            &nbsp;&nbsp;<span class="pk">"eventType"</span>: <span class="pv">"leave.approved"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"leaveRequest"</span>: <span class="ps">{ ...updated with APPROVED status }</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"employeeId"</span>: <span class="pv">"emp-001"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"correlationId"</span>: <span class="pv">"req-7f3a9b..."</span><br>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="event-header">
+          <span class="event-name-badge" style="background:#4c1d95;color:#c4b5fd">leave.rejected</span>
+          <span style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:'JetBrains Mono',monospace">leave.events exchange</span>
+        </div>
+        <div class="event-body">
+          <div class="event-row"><span class="event-key">Trigger</span><span class="event-val">Leave status updated to REJECTED with rejection reason stored</span></div>
+          <div class="event-row"><span class="event-key">Publisher</span><span class="event-val">Leave Service — after <code>leaveRepo.update(REJECTED)</code></span></div>
+          <div class="event-row"><span class="event-key">Consumer</span><span class="event-val">Notification Service — same <code>notification.queue</code></span></div>
+          <div class="event-row"><span class="event-key">Effect</span><span class="event-val">Logs: Leave REJECTED for employee X, reason: Y — rejection reason is included in notification</span></div>
+          <div class="event-row"><span class="event-key">On Failure</span><span class="event-val">Same publish-failure handling. Rejection already committed in Map.</span></div>
+          <div class="event-row"><span class="event-key">Payload</span><span class="event-val"></span></div>
+          <div class="payload-block">
+            {<br>
+            &nbsp;&nbsp;<span class="pk">"eventType"</span>: <span class="pv">"leave.rejected"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"leaveRequest"</span>: <span class="ps">{ ...updated with REJECTED status }</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"employeeId"</span>: <span class="pv">"emp-001"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"rejectionReason"</span>: <span class="pv">"Insufficient coverage"</span>,<br>
+            &nbsp;&nbsp;<span class="pk">"correlationId"</span>: <span class="pv">"req-7f3a9b..."</span><br>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="prose">
+      <strong>RabbitMQ reliability configuration:</strong> All exchanges are declared with
+      <code>durable: true</code>. All queues are declared with <code>durable: true</code>.
+      All messages are published with <code>persistent: true</code>. This three-layer
+      durability means messages survive a RabbitMQ process restart. The
+      <code>amqp-connection-manager</code> library handles automatic reconnection if the
+      connection drops — critical for Docker startup ordering where RabbitMQ may not be
+      fully ready when services first attempt to connect.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 4 — SERVICE DISCOVERY
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="discovery">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Service Discovery via Consul</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      Consul eliminates hardcoded service addresses. Instead of the API Gateway knowing
+      that Leave Service lives at <code>http://leave-service:3002</code> at compile time,
+      it queries Consul at request time for the current healthy address. This means
+      services can be restarted, moved, or scaled without changing Gateway configuration.
+    </p>
+
+    <div class="consul-grid">
+      <div class="consul-card">
+        <div class="consul-card-title">◈ Registration</div>
+        <div class="consul-step">Each service calls <strong>Consul Agent API</strong> on startup after its HTTP server is listening.</div>
+        <div class="consul-step">Registration payload: <code>name</code>, <code>id</code>, <code>address</code>, <code>port</code>, <code>check.http</code></div>
+        <div class="consul-step">Health check: Consul polls <code>GET /health</code> every <strong>10 seconds</strong></div>
+        <div class="consul-step">Deregisters after <strong>30 seconds</strong> of critical (failing) health checks</div>
+        <div class="consul-step">On <code>SIGTERM</code>: service calls <code>deregisterService()</code> before shutdown</div>
+      </div>
+      <div class="consul-card">
+        <div class="consul-card-title">◈ Discovery</div>
+        <div class="consul-step">Gateway calls <code>GET /v1/health/service/{name}?passing=true</code> before each proxied request</div>
+        <div class="consul-step"><code>?passing=true</code> ensures only healthy instances are returned — unhealthy services are automatically excluded</div>
+        <div class="consul-step">Gateway takes the <strong>first result</strong>: <code>instance.Service.Address + ':' + instance.Service.Port</code></div>
+        <div class="consul-step">If Consul returns empty array → <strong>AppError 503</strong> Service Unavailable</div>
+      </div>
+      <div class="consul-card">
+        <div class="consul-card-title">◈ Fallback Strategy</div>
+        <div class="consul-step">If <strong>Consul itself is unavailable</strong>, the Gateway falls back to a hardcoded address map:</div>
+        <div class="consul-step"><code>user-service → localhost:3001</code></div>
+        <div class="consul-step"><code>leave-service → localhost:3002</code></div>
+        <div class="consul-step">Inside Docker: uses Docker service names as hostnames. Fallback is logged at WARN level.</div>
+        <div class="consul-step">This prevents a Consul outage from taking down the entire system immediately.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 5 — CIRCUIT BREAKER
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="circuit">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Circuit Breaker Pattern</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      The API Gateway wraps every downstream HTTP call in an <strong>Opossum circuit breaker</strong>,
+      one per downstream service. Without a circuit breaker, a slow or unresponsive Leave Service
+      would cause every Gateway request to hang for the full timeout duration, exhausting available
+      connections and cascading the failure. The circuit breaker detects degradation early and
+      fast-fails subsequent requests, protecting the Gateway and returning clear error responses to clients.
+    </p>
+
+    <div class="cb-config">
+      <div class="cb-param">
+        <div class="cb-param-val">5s</div>
+        <div class="cb-param-name">Request Timeout</div>
+        <div class="cb-param-note">timeout: 5000</div>
+      </div>
+      <div class="cb-param">
+        <div class="cb-param-val">50%</div>
+        <div class="cb-param-name">Error Threshold</div>
+        <div class="cb-param-note">errorThresholdPercentage: 50</div>
+      </div>
+      <div class="cb-param">
+        <div class="cb-param-val">30s</div>
+        <div class="cb-param-name">Reset Timeout</div>
+        <div class="cb-param-note">resetTimeout: 30000</div>
+      </div>
+      <div class="cb-param">
+        <div class="cb-param-val">5</div>
+        <div class="cb-param-name">Volume Threshold</div>
+        <div class="cb-param-note">volumeThreshold: 5</div>
+      </div>
+    </div>
+
+    <div class="cb-states">
+      <div class="cb-state">
+        <div class="cb-indicator" style="background:#14532d20;border:2px solid #10b981">✓</div>
+        <div class="cb-state-name" style="color:#10b981">CLOSED</div>
+        <div class="cb-state-desc">Normal operation. All requests pass through to the downstream service. Failures are tracked. Circuit opens when error rate exceeds 50% over at least 5 requests.</div>
+      </div>
+      <div class="cb-state">
+        <div class="cb-indicator" style="background:#431407 20;border:2px solid #ef4444">✗</div>
+        <div class="cb-state-name" style="color:#ef4444">OPEN</div>
+        <div class="cb-state-desc">Downstream is unhealthy. All requests instantly return 503 without touching the downstream service. Stays open for 30 seconds then transitions to HALF-OPEN.</div>
+      </div>
+      <div class="cb-state">
+        <div class="cb-indicator" style="background:#78350f20;border:2px solid #f59e0b">~</div>
+        <div class="cb-state-name" style="color:#f59e0b">HALF-OPEN</div>
+        <div class="cb-state-desc">Trial mode. One test request is allowed through. If it succeeds, circuit closes. If it fails, circuit opens again for another 30 seconds.</div>
+      </div>
+    </div>
+
+    <p class="prose">
+      The circuit state for each downstream service is exposed in the Gateway's
+      <code>GET /health</code> response: <code>{ "circuits": { "leave-service": "closed", "user-service": "open" } }</code>.
+      This makes the circuit state observable during the demo without needing to look at logs.
+      The <strong>fallback</strong> response when the circuit is open is:
+      <code>{ "error": "leave-service is temporarily unavailable. Please retry after 30 seconds", "correlationId": "..." }</code>
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 6 — CORRELATION ID
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="correlation">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Correlation ID — Request Tracing Across Services</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      A <strong>Correlation ID</strong> is a UUID generated once per request at the API Gateway
+      and carried through every service that request touches — including across async RabbitMQ
+      event boundaries. It appears in every single log line, enabling you to reconstruct the
+      complete story of any request by grepping for one value across all service logs.
+      It is also returned in every HTTP error response body so clients can report it.
+    </p>
+
+    <div class="corr-flow">
+      <div class="corr-row">
+        <div class="corr-service"><div class="corr-svc-dot" style="background:var(--client)"></div>CLIENT</div>
+        <div class="corr-action">Sends request. May optionally include <code>X-Correlation-Id</code> header if the client has its own tracing system.</div>
+        <div class="corr-log">→ PATCH /leaves/abc/approve<br>X-Correlation-Id: (optional)</div>
+      </div>
+      <div class="corr-row">
+        <div class="corr-service"><div class="corr-svc-dot" style="background:var(--gateway)"></div>API GATEWAY</div>
+        <div class="corr-action"><strong>Generates UUID</strong> if header absent. Attaches to <code>req.correlationId</code>. Sets on response header. Forwards as <code>X-Correlation-Id</code> to downstream.</div>
+        <div class="corr-log">{ "service":"api-gateway",<br>&nbsp;&nbsp;"level":"info",<br>&nbsp;&nbsp;<span class="hl">"correlationId":"req-7f3a9b"</span>,<br>&nbsp;&nbsp;"msg":"Proxying to leave-service" }</div>
+      </div>
+      <div class="corr-row">
+        <div class="corr-service"><div class="corr-svc-dot" style="background:var(--leave-svc)"></div>LEAVE SERVICE</div>
+        <div class="corr-action">correlationId middleware reads <code>X-Correlation-Id</code> header. Attaches to <code>req.correlationId</code>. Every logger call in this request includes it. Passed into service function as input parameter.</div>
+        <div class="corr-log">{ "service":"leave-service",<br>&nbsp;&nbsp;<span class="hl">"correlationId":"req-7f3a9b"</span>,<br>&nbsp;&nbsp;"msg":"Approving leave abc",<br>&nbsp;&nbsp;"leaveId":"abc" }<br>{ "service":"leave-service",<br>&nbsp;&nbsp;<span class="hl">"correlationId":"req-7f3a9b"</span>,<br>&nbsp;&nbsp;"msg":"Balance deducted" }</div>
+      </div>
+      <div class="corr-row">
+        <div class="corr-service"><div class="corr-svc-dot" style="background:var(--rabbitmq)"></div>RABBITMQ EVENT</div>
+        <div class="corr-action">Leave Service embeds <code>correlationId</code> in the event payload before publishing. This bridges the async boundary — the ID travels inside the message itself.</div>
+        <div class="corr-log">{ "eventType":"leave.approved",<br>&nbsp;&nbsp;"employeeId":"emp-001",<br>&nbsp;&nbsp;<span class="hl">"correlationId":"req-7f3a9b"</span> }</div>
+      </div>
+      <div class="corr-row">
+        <div class="corr-service"><div class="corr-svc-dot" style="background:var(--notif-svc)"></div>NOTIFICATION SVC</div>
+        <div class="corr-action">Consumer reads <code>event.correlationId</code> from the parsed message. Logs notification with the same ID — connecting the async log entry back to the original HTTP request.</div>
+        <div class="corr-log">{ "service":"notification-service",<br>&nbsp;&nbsp;<span class="hl">"correlationId":"req-7f3a9b"</span>,<br>&nbsp;&nbsp;"msg":"NOTIFICATION | Leave Approved<br>&nbsp;&nbsp;| Employee: emp-001" }</div>
+      </div>
+    </div>
+
+    <p class="prose">
+      To find all logs for one request: <code>docker-compose logs | grep req-7f3a9b</code>.
+      This returns every log line from every service — Gateway, Leave Service, and Notification Service —
+      in one output, giving the complete request timeline. The correlationId also appears in all
+      error response bodies, so when a user reports an error, they include it and you search immediately.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 7 — HEADER CONTRACT
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="headers">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2 class="section-title">Internal Header Contract</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      The API Gateway and downstream services communicate through a <strong>defined set of
+      internal headers</strong>. The Gateway strips the raw JWT and replaces it with decoded,
+      trusted context. Services must never accept the raw JWT — they trust only these headers,
+      and only when the internal secret is present. This prevents any client from bypassing
+      the Gateway and calling services directly with a forged identity.
+    </p>
+
+    <table class="headers-table">
+      <thead>
+        <tr>
+          <th>Header</th>
+          <th>Set By</th>
+          <th>Read By</th>
+          <th>Value</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Authorization</td>
+          <td>Client</td>
+          <td>API Gateway only</td>
+          <td>Bearer &lt;jwt&gt;</td>
+          <td>Raw JWT token. Gateway validates and then <strong>strips this header</strong> before forwarding. Services never see it.</td>
+        </tr>
+        <tr>
+          <td>X-User-Id</td>
+          <td>API Gateway</td>
+          <td>All services</td>
+          <td>e.g. emp-001</td>
+          <td>The authenticated user's ID, extracted from the validated JWT payload. Services set req.user.userId from this.</td>
+        </tr>
+        <tr>
+          <td>X-User-Role</td>
+          <td>API Gateway</td>
+          <td>All services</td>
+          <td>EMPLOYEE or MANAGER</td>
+          <td>The authenticated user's role. Used by requireRole middleware in each service.</td>
+        </tr>
+        <tr>
+          <td>X-Internal-Secret</td>
+          <td>API Gateway</td>
+          <td>All services</td>
+          <td>Shared secret string</td>
+          <td>Proves the request came through the Gateway. Services reject any request where this header is absent or wrong. Prevents Gateway bypass.</td>
+        </tr>
+        <tr>
+          <td>X-Correlation-Id</td>
+          <td>API Gateway (generates or passes through)</td>
+          <td>All services, RabbitMQ event payloads</td>
+          <td>UUID v4</td>
+          <td>Request-scoped trace ID. Present in every log line and every error response. Embedded in async event payloads to bridge async boundaries.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="prose">
+      For <strong>public endpoints</strong> (POST /auth/login, GET /health), the Gateway
+      forwards <code>X-Correlation-Id</code> only. It does not add <code>X-User-Id</code>,
+      <code>X-User-Role</code>, or <code>X-Internal-Secret</code> because no JWT was validated.
+      The User Service's login route does not apply the internalAuth middleware — it is mounted
+      publicly with no auth requirements.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 8 — ASSUMPTIONS
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="assumptions">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2 class="section-title">Design Assumptions</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      The following assumptions were made during design. Each is documented with its
+      rationale and the impact it has on the system — whether it is an MVP trade-off,
+      a deliberate design decision, or a known limitation.
+    </p>
+
+    <div class="assumptions-grid">
+
+      <div class="assumption-item">
+        <div class="assumption-num">A1</div>
+        <div class="assumption-content">
+          <div class="assumption-title">In-Memory Storage is Acceptable for MVP</div>
+          <div class="assumption-desc">All data — users, leave requests, balances — is stored in Node.js <code>Map</code> objects. Data is lost on service restart. This is explicitly permitted by the assignment specification which states "In-memory collections or mock data stores" as a valid MVP approach.</div>
+          <div><span class="assumption-impact impact-mvp">MVP Trade-off</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A2</div>
+        <div class="assumption-content">
+          <div class="assumption-title">managerId is Provided by the Client on Leave Application</div>
+          <div class="assumption-desc">When an employee applies for leave, they provide the <code>managerId</code> in the request body. The system validates it is a valid UUID but does not verify that the provided ID actually belongs to a manager in the user store. In production, the backend would look up the employee's assigned manager automatically from the employee record, preventing employees from routing their request to an arbitrary manager.</div>
+          <div><span class="assumption-impact impact-trade">Production Gap</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A3</div>
+        <div class="assumption-content">
+          <div class="assumption-title">numberOfDays is Client-Provided, Not Calculated</div>
+          <div class="assumption-desc">The <code>numberOfDays</code> field is sent by the client and trusted as-is. The system does not calculate it from <code>startDate</code> and <code>endDate</code>, nor does it validate consistency between the three values. A client could send startDate: 2026-09-01, endDate: 2026-09-03, numberOfDays: 10 and the system would accept it. In production, <code>numberOfDays</code> would be calculated server-side and the client value ignored.</div>
+          <div><span class="assumption-impact impact-trade">Production Gap</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A4</div>
+        <div class="assumption-content">
+          <div class="assumption-title">JWT Tokens Are Not Revocable</div>
+          <div class="assumption-desc">Once a JWT is issued, it is valid until its 8-hour expiry regardless of what happens — user deleted, role changed, password reset. There is no token blacklist. Implementing revocation requires a shared store (Redis) accessible by the Gateway. This is an intentional MVP simplification — the assignment does not require token revocation.</div>
+          <div><span class="assumption-impact impact-security">Security Trade-off</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A5</div>
+        <div class="assumption-content">
+          <div class="assumption-title">Balance Initialization Has a Small Race Window</div>
+          <div class="assumption-desc">After a new employee is created, the <code>user.created</code> RabbitMQ event is published asynchronously. There is a brief window (milliseconds to seconds depending on consumer lag) where the employee exists but their balance has not yet been initialized. If the employee calls <code>GET /balances/my-balance</code> in this window, they receive a 404. In production, this would be handled by either synchronous balance initialization or a retry mechanism on the client.</div>
+          <div><span class="assumption-impact impact-trade">Known Race Condition</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A6</div>
+        <div class="assumption-content">
+          <div class="assumption-title">Notifications Are Log-Only — No Real Delivery</div>
+          <div class="assumption-desc">The assignment explicitly states no real email or SMS integration. The Notification Service consumes events and writes structured log entries using Pino. These logs are the "notifications." In production, the consumer would call an email provider (SendGrid, SES) or SMS gateway.</div>
+          <div><span class="assumption-impact impact-mvp">MVP Scope</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A7</div>
+        <div class="assumption-content">
+          <div class="assumption-title">All Dates Are Treated as UTC Strings</div>
+          <div class="assumption-desc">Dates are stored and compared as <code>YYYY-MM-DD</code> strings. No timezone conversion is applied. "Today" for past-date validation is computed as <code>new Date().toISOString().split('T')[0]</code> — UTC date of the server. An employee in a timezone ahead of UTC could theoretically request a leave starting "tomorrow" in their timezone but "today" in UTC, receiving a 400 error. This is acceptable for MVP.</div>
+          <div><span class="assumption-impact impact-design">Design Decision</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A8</div>
+        <div class="assumption-content">
+          <div class="assumption-title">Single Instance Per Service — No Horizontal Scaling</div>
+          <div class="assumption-desc">Each service runs as a single Docker container. The in-memory <code>Map</code> stores live in the Node.js process heap. If two instances of Leave Service ran, they would each have separate Maps and would have inconsistent state — approving a leave on instance A would not update the balance on instance B. Horizontal scaling requires shared storage (database or Redis). This is an intentional MVP constraint.</div>
+          <div><span class="assumption-impact impact-mvp">MVP Scope</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A9</div>
+        <div class="assumption-content">
+          <div class="assumption-title">Balance Deduction is Synchronous to Prevent Race Conditions</div>
+          <div class="assumption-desc">The <code>deductBalance()</code> function in the balance repository is deliberately fully synchronous — no <code>await</code> between reading the balance and writing the deducted value. Node.js processes one callback at a time, so a synchronous read-check-deduct-write block cannot be interleaved by another concurrent operation. If <code>await</code> were added between the read and write, two concurrent approval requests could both read a sufficient balance before either writes, causing double-deduction.</div>
+          <div><span class="assumption-impact impact-design">Design Decision</span></div>
+        </div>
+      </div>
+
+      <div class="assumption-item">
+        <div class="assumption-num">A10</div>
+        <div class="assumption-content">
+          <div class="assumption-title">user.created Event Initialization is Idempotent</div>
+          <div class="assumption-desc">RabbitMQ guarantees at-least-once delivery — a message may be delivered more than once in rare failure scenarios. The <code>initializeBalance()</code> function checks if a balance already exists for the <code>userId</code> before creating one. If it does, it returns the existing balance without modification. This makes the consumer idempotent — processing the same <code>user.created</code> event twice produces the correct result.</div>
+          <div><span class="assumption-impact impact-design">Design Decision</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleFlow(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('open');
+  }
+
+  // Smooth scroll for TOC links
+  document.querySelectorAll('a.toc-item').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Auto-open first flow card
+  document.getElementById('fc-approve').classList.add('open');
+</script>
+
+</body>
+</html>

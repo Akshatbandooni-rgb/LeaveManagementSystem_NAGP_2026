@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leave Management System — Microservices Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --border-bright: #2a3f5f;
+
+    --client: #f59e0b;
+    --gateway: #8b5cf6;
+    --user-svc: #3b82f6;
+    --leave-svc: #10b981;
+    --notif-svc: #f97316;
+    --rabbitmq: #ef4444;
+    --consul: #06b6d4;
+    --jaeger: #ec4899;
+    --infra: #6b7280;
+
+    --sync: #60a5fa;
+    --async: #fb923c;
+    --discovery: #22d3ee;
+    --tracing: #f472b6;
+
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #334155;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 32px 48px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  header h1 span { color: var(--gateway); }
+  header p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+  .legend-line {
+    width: 28px;
+    height: 2px;
+    border-radius: 2px;
+  }
+  .legend-line.dashed {
+    background: repeating-linear-gradient(90deg, transparent, transparent 4px, currentColor 4px, currentColor 8px);
+    height: 0;
+    border-top: 2px dashed currentColor;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── MAIN CANVAS ── */
+  .canvas {
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  /* ── ROWS ── */
+  .row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    position: relative;
+  }
+
+  /* ── CONNECTOR ARROWS ── */
+  .arrows-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 24px;
+    position: relative;
+    flex-shrink: 0;
+    width: 80px;
+  }
+  .arrow-line {
+    width: 2px;
+    flex: 1;
+    min-height: 24px;
+  }
+  .arrow-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    writing-mode: vertical-rl;
+    color: var(--text-muted);
+    padding: 4px 0;
+    letter-spacing: 0.5px;
+  }
+  .arrow-head {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+  }
+  .arrow-head.down { border-top: 8px solid; }
+  .arrow-head.up { border-bottom: 8px solid; }
+  .arrow-both { position: relative; }
+
+  /* ── SERVICE CARDS ── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    flex: 1;
+  }
+
+  .card {
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    cursor: default;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    border-color: var(--border-bright);
+  }
+
+  .card.client::before { background: var(--client); }
+  .card.gateway::before { background: var(--gateway); }
+  .card.user-svc::before { background: var(--user-svc); }
+  .card.leave-svc::before { background: var(--leave-svc); }
+  .card.notif-svc::before { background: var(--notif-svc); }
+  .card.rabbitmq::before { background: var(--rabbitmq); }
+  .card.consul::before { background: var(--consul); }
+  .card.jaeger::before { background: var(--jaeger); }
+
+  .card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 100px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .card-port {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .card-desc {
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+  }
+  .tag {
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .card-endpoints {
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .endpoint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: #64748b;
+    padding: 2px 0;
+  }
+  .method {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .method.get { background: #1d4ed8; color: #93c5fd; }
+  .method.post { background: #15803d; color: #86efac; }
+  .method.patch { background: #92400e; color: #fcd34d; }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 16px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── FLOW ARROWS SVG ── */
+  .flow-svg {
+    width: 100%;
+    overflow: visible;
+    display: block;
+  }
+
+  /* ── INFRA ROW ── */
+  .infra-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    flex: 1;
+  }
+
+  /* ── SINGLE CARD ROW ── */
+  .single-card {
+    max-width: 400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ── EVENTS TABLE ── */
+  .events-section {
+    margin-top: 40px;
+    padding: 28px 48px;
+    border-top: 1px solid var(--border);
+  }
+  .events-section h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .event-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+    display: inline-block;
+    width: fit-content;
+  }
+  .event-row {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+    align-items: flex-start;
+  }
+  .event-key {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    min-width: 72px;
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+  .event-val { color: #cbd5e1; line-height: 1.5; }
+
+  /* ── SEQUENCE DIAGRAM ── */
+  .sequence-section {
+    padding: 28px 48px;
+    border-top: 1px solid var(--border);
+  }
+  .sequence-section h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .seq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .seq-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .seq-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .seq-step {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  .seq-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 1px;
+  }
+  .seq-text {
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+  .seq-text strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .seq-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--sync);
+    margin-left: 30px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .seq-arrow.async { color: var(--async); }
+
+  /* ── DATA MODELS ── */
+  .models-section {
+    padding: 28px 48px;
+    border-top: 1px solid var(--border);
+  }
+  .models-section h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .model-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .model-header {
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .model-field {
+    padding: 5px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    align-items: center;
+    gap: 8px;
+  }
+  .field-name { color: #93c5fd; }
+  .field-type { color: #86efac; font-size: 9.5px; }
+  .field-note { color: var(--text-muted); font-size: 9px; }
+
+  /* ── TECH STACK ── */
+  .tech-section {
+    padding: 28px 48px 40px;
+    border-top: 1px solid var(--border);
+  }
+  .tech-section h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .tech-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .tech-name {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .tech-purpose {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* ── MAIN ARCH DIAGRAM ── */
+  .arch-container {
+    padding: 0 48px 40px;
+    position: relative;
+  }
+
+  .arch-diagram {
+    position: relative;
+    width: 100%;
+  }
+
+  /* ── TOOLTIP ── */
+  .tooltip {
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 11px;
+    max-width: 220px;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s;
+    line-height: 1.6;
+    color: #94a3b8;
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 12px; }
+
+  /* ── PRINT BUTTON ── */
+  .actions {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 50;
+  }
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: var(--border); }
+
+  @media print {
+    body { background: white; color: black; }
+    .actions { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="actions">
+  <button class="btn" onclick="window.print()">⬇ Export PDF</button>
+</div>
+
+<div id="tooltip" class="tooltip"></div>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <h1>Leave Management System<br><span>Microservices Architecture</span></h1>
+    <p>Node.js · Express · TypeScript · RabbitMQ · Consul · Jaeger · Docker</p>
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-line" style="background:var(--sync)"></div>
+      Sync HTTP
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background:var(--async); background: repeating-linear-gradient(90deg, var(--async), var(--async) 5px, transparent 5px, transparent 9px)"></div>
+      Async Event
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background:var(--discovery)"></div>
+      Service Discovery
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background:var(--tracing)"></div>
+      Distributed Tracing
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--gateway)"></div>
+      API Gateway
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--user-svc)"></div>
+      User Service
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--leave-svc)"></div>
+      Leave Service
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--notif-svc)"></div>
+      Notification Service
+    </div>
+  </div>
+</header>
+
+<!-- ARCHITECTURE DIAGRAM SVG -->
+<div class="arch-container">
+  <div class="section-label">System Architecture</div>
+
+  <svg id="arch-svg" viewBox="0 0 1100 720" style="width:100%;font-family:'Syne',sans-serif;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Arrow markers -->
+      <marker id="arr-sync" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#60a5fa"/>
+      </marker>
+      <marker id="arr-async" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#fb923c"/>
+      </marker>
+      <marker id="arr-discovery" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#22d3ee"/>
+      </marker>
+      <marker id="arr-tracing" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#f472b6"/>
+      </marker>
+      <marker id="arr-sync-up" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+        <path d="M8,0 L8,6 L0,3 z" fill="#60a5fa"/>
+      </marker>
+
+      <!-- Glow filters -->
+      <filter id="glow-purple">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-blue">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+
+      <!-- Grid pattern -->
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e2d45" stroke-width="0.5"/>
+      </pattern>
+    </defs>
+
+    <!-- Background grid -->
+    <rect width="1100" height="720" fill="url(#grid)" opacity="0.4"/>
+
+    <!-- ─────────────── ROW 0: CLIENT ─────────────── -->
+    <!-- Client box -->
+    <rect x="420" y="20" width="260" height="70" rx="10" fill="#111827" stroke="#f59e0b" stroke-width="1.5"/>
+    <rect x="420" y="20" width="260" height="4" rx="2" fill="#f59e0b"/>
+    <text x="550" y="50" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="700">CLIENT</text>
+    <text x="550" y="68" text-anchor="middle" fill="#64748b" font-size="10" font-family="'JetBrains Mono',monospace">Postman / HTTP Client</text>
+
+    <!-- Client → Gateway arrow -->
+    <line x1="550" y1="90" x2="550" y2="128" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#arr-sync)"/>
+    <rect x="560" y="100" width="80" height="16" rx="4" fill="#111827"/>
+    <text x="600" y="112" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="'JetBrains Mono',monospace">JWT Bearer</text>
+
+    <!-- ─────────────── ROW 1: API GATEWAY ─────────────── -->
+    <rect x="260" y="130" width="580" height="100" rx="12" fill="#111827" stroke="#8b5cf6" stroke-width="2" filter="url(#glow-purple)"/>
+    <rect x="260" y="130" width="580" height="4" rx="2" fill="#8b5cf6"/>
+    <text x="300" y="158" fill="#8b5cf6" font-size="11" font-weight="700" font-family="'JetBrains Mono',monospace">:3000</text>
+    <text x="550" y="162" text-anchor="middle" fill="#c4b5fd" font-size="16" font-weight="800">API GATEWAY</text>
+    <text x="550" y="182" text-anchor="middle" fill="#64748b" font-size="10">JWT Validation  ·  Request Enrichment  ·  Service Discovery  ·  Circuit Breaker  ·  Correlation ID</text>
+
+    <!-- Gateway feature pills -->
+    <rect x="295" y="195" width="90" height="20" rx="10" fill="#1a1133" stroke="#6d28d9" stroke-width="1"/>
+    <text x="340" y="209" text-anchor="middle" fill="#a78bfa" font-size="9" font-family="'JetBrains Mono',monospace">JWT Auth</text>
+    <rect x="397" y="195" width="100" height="20" rx="10" fill="#1a1133" stroke="#6d28d9" stroke-width="1"/>
+    <text x="447" y="209" text-anchor="middle" fill="#a78bfa" font-size="9" font-family="'JetBrains Mono',monospace">Opossum CB</text>
+    <rect x="509" y="195" width="110" height="20" rx="10" fill="#1a1133" stroke="#6d28d9" stroke-width="1"/>
+    <text x="564" y="209" text-anchor="middle" fill="#a78bfa" font-size="9" font-family="'JetBrains Mono',monospace">Consul Lookup</text>
+    <rect x="631" y="195" width="100" height="20" rx="10" fill="#1a1133" stroke="#6d28d9" stroke-width="1"/>
+    <text x="681" y="209" text-anchor="middle" fill="#a78bfa" font-size="9" font-family="'JetBrains Mono',monospace">HTTP Proxy</text>
+    <rect x="743" y="195" width="80" height="20" rx="10" fill="#1a1133" stroke="#6d28d9" stroke-width="1"/>
+    <text x="783" y="209" text-anchor="middle" fill="#a78bfa" font-size="9" font-family="'JetBrains Mono',monospace">Enrichment</text>
+
+    <!-- ─────────────── GATEWAY → SERVICES arrows ─────────────── -->
+    <!-- to User Service -->
+    <path d="M 380 230 L 220 230 L 220 320" stroke="#60a5fa" stroke-width="1.5" fill="none" marker-end="url(#arr-sync)"/>
+    <rect x="245" y="256" width="110" height="28" rx="4" fill="#0f172a"/>
+    <text x="300" y="267" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="'JetBrains Mono',monospace">/auth/* /users/*</text>
+    <text x="300" y="278" text-anchor="middle" fill="#3b82f6" font-size="8" font-family="'JetBrains Mono',monospace">sync HTTP</text>
+
+    <!-- to Leave Service -->
+    <path d="M 720 230 L 880 230 L 880 320" stroke="#60a5fa" stroke-width="1.5" fill="none" marker-end="url(#arr-sync)"/>
+    <rect x="745" y="256" width="116" height="28" rx="4" fill="#0f172a"/>
+    <text x="803" y="267" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="'JetBrains Mono',monospace">/leaves/* /balances/*</text>
+    <text x="803" y="278" text-anchor="middle" fill="#3b82f6" font-size="8" font-family="'JetBrains Mono',monospace">sync HTTP</text>
+
+    <!-- ─────────────── ROW 2: USER SERVICE ─────────────── -->
+    <rect x="60" y="320" width="320" height="150" rx="12" fill="#111827" stroke="#3b82f6" stroke-width="1.5"/>
+    <rect x="60" y="320" width="320" height="4" rx="2" fill="#3b82f6"/>
+    <text x="100" y="348" fill="#3b82f6" font-size="11" font-weight="700" font-family="'JetBrains Mono',monospace">:3001</text>
+    <text x="220" y="352" text-anchor="middle" fill="#93c5fd" font-size="14" font-weight="800">USER SERVICE</text>
+    <text x="220" y="370" text-anchor="middle" fill="#64748b" font-size="10">Identity · Auth · JWT Issuance</text>
+
+    <line x1="80" y1="380" x2="360" y2="380" stroke="#1e2d45" stroke-width="1"/>
+    <text x="90" y="395" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">POST /auth/login</text>
+    <text x="90" y="410" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">GET  /users/:id</text>
+    <text x="90" y="425" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">GET  /users</text>
+    <text x="90" y="440" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">POST /users</text>
+    <text x="90" y="455" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">GET  /health</text>
+
+    <!-- In-mem store badge User -->
+    <rect x="240" y="386" width="130" height="56" rx="6" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+    <text x="305" y="400" text-anchor="middle" fill="#60a5fa" font-size="9" font-family="'JetBrains Mono',monospace" font-weight="700">In-Memory Store</text>
+    <text x="305" y="414" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">Map&lt;id, User&gt;</text>
+    <text x="305" y="428" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">3 seeded users</text>
+    <text x="305" y="442" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">bcrypt hashed pw</text>
+
+    <!-- ─────────────── ROW 2: LEAVE SERVICE ─────────────── -->
+    <rect x="720" y="320" width="360" height="150" rx="12" fill="#111827" stroke="#10b981" stroke-width="1.5"/>
+    <rect x="720" y="320" width="360" height="4" rx="2" fill="#10b981"/>
+    <text x="760" y="348" fill="#10b981" font-size="11" font-weight="700" font-family="'JetBrains Mono',monospace">:3002</text>
+    <text x="900" y="352" text-anchor="middle" fill="#6ee7b7" font-size="14" font-weight="800">LEAVE SERVICE</text>
+    <text x="900" y="370" text-anchor="middle" fill="#64748b" font-size="10">Business Logic · Balances · Approvals</text>
+
+    <line x1="740" y1="380" x2="1060" y2="380" stroke="#1e2d45" stroke-width="1"/>
+    <text x="750" y="395" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">POST  /leaves</text>
+    <text x="750" y="410" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">GET   /leaves/my-requests</text>
+    <text x="750" y="425" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">GET   /leaves/pending</text>
+    <text x="750" y="440" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">PATCH /leaves/:id/approve</text>
+    <text x="750" y="455" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">PATCH /leaves/:id/reject</text>
+
+    <!-- In-mem stores badge Leave -->
+    <rect x="940" y="386" width="130" height="56" rx="6" fill="#0f172a" stroke="#064e3b" stroke-width="1"/>
+    <text x="1005" y="400" text-anchor="middle" fill="#10b981" font-size="9" font-family="'JetBrains Mono',monospace" font-weight="700">In-Memory Store</text>
+    <text x="1005" y="414" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">Map&lt;id, LeaveRequest&gt;</text>
+    <text x="1005" y="428" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">Map&lt;id, Balance&gt;</text>
+    <text x="1005" y="442" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">sync deduct logic</text>
+
+    <!-- ─────────────── USER → RABBITMQ (user.created) ─────────────── -->
+    <path d="M 220 470 L 220 510 L 420 510" stroke="#fb923c" stroke-width="1.5" fill="none" stroke-dasharray="5,4" marker-end="url(#arr-async)"/>
+    <rect x="240" y="488" width="90" height="16" rx="4" fill="#0f172a"/>
+    <text x="285" y="500" text-anchor="middle" fill="#fb923c" font-size="9" font-family="'JetBrains Mono',monospace">user.created</text>
+
+    <!-- ─────────────── LEAVE → RABBITMQ (leave events) ─────────────── -->
+    <path d="M 900 470 L 900 510 L 700 510" stroke="#fb923c" stroke-width="1.5" fill="none" stroke-dasharray="5,4" marker-end="url(#arr-async)"/>
+    <rect x="760" y="488" width="90" height="16" rx="4" fill="#0f172a"/>
+    <text x="805" y="500" text-anchor="middle" fill="#fb923c" font-size="9" font-family="'JetBrains Mono',monospace">leave.events</text>
+
+    <!-- ─────────────── ROW 3: RABBITMQ ─────────────── -->
+    <rect x="380" y="490" width="340" height="80" rx="12" fill="#111827" stroke="#ef4444" stroke-width="1.5"/>
+    <rect x="380" y="490" width="340" height="4" rx="2" fill="#ef4444"/>
+    <text x="420" y="518" fill="#ef4444" font-size="11" font-weight="700" font-family="'JetBrains Mono',monospace">:5672</text>
+    <text x="550" y="520" text-anchor="middle" fill="#fca5a5" font-size="14" font-weight="800">RABBITMQ</text>
+
+    <rect x="397" y="530" width="135" height="26" rx="5" fill="#0f172a" stroke="#7f1d1d" stroke-width="1"/>
+    <text x="464" y="542" text-anchor="middle" fill="#ef4444" font-size="8.5" font-family="'JetBrains Mono',monospace" font-weight="700">Exchange: user.events</text>
+    <text x="464" y="552" text-anchor="middle" fill="#64748b" font-size="8" font-family="'JetBrains Mono',monospace">topic · durable</text>
+
+    <rect x="545" y="530" width="140" height="26" rx="5" fill="#0f172a" stroke="#7f1d1d" stroke-width="1"/>
+    <text x="615" y="542" text-anchor="middle" fill="#ef4444" font-size="8.5" font-family="'JetBrains Mono',monospace" font-weight="700">Exchange: leave.events</text>
+    <text x="615" y="552" text-anchor="middle" fill="#64748b" font-size="8" font-family="'JetBrains Mono',monospace">topic · durable</text>
+
+    <!-- ─────────────── RABBITMQ → LEAVE SERVICE (user.created consumed) ─────────────── -->
+    <path d="M 550 570 L 550 600 L 830 600 L 830 470" stroke="#fb923c" stroke-width="1.5" fill="none" stroke-dasharray="5,4" marker-end="url(#arr-async)"/>
+    <rect x="660" y="578" width="110" height="16" rx="4" fill="#0f172a"/>
+    <text x="715" y="590" text-anchor="middle" fill="#fb923c" font-size="9" font-family="'JetBrains Mono',monospace">consumes user.created</text>
+
+    <!-- ─────────────── RABBITMQ → NOTIFICATION (leave events consumed) ─────────────── -->
+    <path d="M 600 570 L 600 630" stroke="#fb923c" stroke-width="1.5" fill="none" stroke-dasharray="5,4" marker-end="url(#arr-async)"/>
+
+    <!-- ─────────────── ROW 4: NOTIFICATION SERVICE ─────────────── -->
+    <rect x="420" y="630" width="260" height="75" rx="12" fill="#111827" stroke="#f97316" stroke-width="1.5"/>
+    <rect x="420" y="630" width="260" height="4" rx="2" fill="#f97316"/>
+    <text x="460" y="658" fill="#f97316" font-size="11" font-weight="700" font-family="'JetBrains Mono',monospace">:3003</text>
+    <text x="550" y="660" text-anchor="middle" fill="#fdba74" font-size="14" font-weight="800">NOTIFICATION SERVICE</text>
+    <text x="550" y="678" text-anchor="middle" fill="#64748b" font-size="10">Consumes events · Logs structured notifications</text>
+    <text x="550" y="694" text-anchor="middle" fill="#475569" font-size="9" font-family="'JetBrains Mono',monospace">No HTTP API except /health</text>
+
+    <!-- ─────────────── CONSUL (left side) ─────────────── -->
+    <rect x="20" y="490" width="130" height="100" rx="10" fill="#111827" stroke="#06b6d4" stroke-width="1.5"/>
+    <rect x="20" y="490" width="130" height="4" rx="2" fill="#06b6d4"/>
+    <text x="85" y="516" text-anchor="middle" fill="#22d3ee" font-size="12" font-weight="800">CONSUL</text>
+    <text x="85" y="530" text-anchor="middle" fill="#64748b" font-size="9">:8500</text>
+    <text x="85" y="546" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">Service Registry</text>
+    <text x="85" y="558" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">Health Checking</text>
+    <text x="85" y="570" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">DNS Discovery</text>
+    <text x="85" y="582" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">UI: :8500</text>
+
+    <!-- All services → Consul (registration) -->
+    <path d="M 150 200 L 85 200 L 85 490" stroke="#22d3ee" stroke-width="1" fill="none" stroke-dasharray="3,3" marker-end="url(#arr-discovery)" opacity="0.6"/>
+    <text x="32" y="360" fill="#0891b2" font-size="8.5" font-family="'JetBrains Mono',monospace" writing-mode="vertical-rl" transform="rotate(180, 32, 360)">register + discover</text>
+
+    <!-- ─────────────── JAEGER (right side) ─────────────── -->
+    <rect x="950" y="490" width="130" height="100" rx="10" fill="#111827" stroke="#ec4899" stroke-width="1.5"/>
+    <rect x="950" y="490" width="130" height="4" rx="2" fill="#ec4899"/>
+    <text x="1015" y="516" text-anchor="middle" fill="#f9a8d4" font-size="12" font-weight="800">JAEGER</text>
+    <text x="1015" y="530" text-anchor="middle" fill="#64748b" font-size="9">:16686 / :4318</text>
+    <text x="1015" y="546" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">Distributed Tracing</text>
+    <text x="1015" y="558" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">OTLP HTTP</text>
+    <text x="1015" y="570" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">OpenTelemetry</text>
+    <text x="1015" y="582" text-anchor="middle" fill="#475569" font-size="8.5" font-family="'JetBrains Mono',monospace">UI: :16686</text>
+
+    <!-- All services → Jaeger (tracing) -->
+    <path d="M 950 200 L 1015 200 L 1015 490" stroke="#ec4899" stroke-width="1" fill="none" stroke-dasharray="3,3" marker-end="url(#arr-tracing)" opacity="0.6"/>
+    <text x="1058" y="360" fill="#be185d" font-size="8.5" font-family="'JetBrains Mono',monospace" writing-mode="vertical-rl">send traces (OTLP)</text>
+
+    <!-- ─────────────── PORT LABELS ─────────────── -->
+    <rect x="550" y="107" width="30" height="14" rx="3" fill="#1e2d45"/>
+    <text x="565" y="118" text-anchor="middle" fill="#64748b" font-size="9" font-family="'JetBrains Mono',monospace">:443</text>
+
+  </svg>
+</div>
+
+<!-- EVENTS SECTION -->
+<div class="events-section">
+  <h2>// RabbitMQ Event Reference</h2>
+  <div class="events-grid">
+
+    <div class="event-card">
+      <span class="event-name" style="background:#431407;color:#fb923c">user.created</span>
+      <div class="event-row"><span class="event-key">Exchange</span><span class="event-val">user.events (topic, durable)</span></div>
+      <div class="event-row"><span class="event-key">Routing Key</span><span class="event-val font-mono">user.created</span></div>
+      <div class="event-row"><span class="event-key">Published By</span><span class="event-val">User Service — after new EMPLOYEE saved</span></div>
+      <div class="event-row"><span class="event-key">Consumed By</span><span class="event-val">Leave Service — initializes CASUAL:12, SICK:10, PRIVILEGE:15</span></div>
+      <div class="event-row"><span class="event-key">Queue</span><span class="event-val">leave-service.user.created (durable)</span></div>
+      <div class="event-row"><span class="event-key">Payload</span><span class="event-val">userId, role, correlationId</span></div>
+    </div>
+
+    <div class="event-card">
+      <span class="event-name" style="background:#14532d;color:#4ade80">leave.applied</span>
+      <div class="event-row"><span class="event-key">Exchange</span><span class="event-val">leave.events (topic, durable)</span></div>
+      <div class="event-row"><span class="event-key">Routing Key</span><span class="event-val font-mono">leave.applied</span></div>
+      <div class="event-row"><span class="event-key">Published By</span><span class="event-val">Leave Service — after leave saved as PENDING</span></div>
+      <div class="event-row"><span class="event-key">Consumed By</span><span class="event-val">Notification Service — logs apply notification</span></div>
+      <div class="event-row"><span class="event-key">Queue</span><span class="event-val">notification.queue (durable)</span></div>
+      <div class="event-row"><span class="event-key">Payload</span><span class="event-val">leaveRequest, managerId, correlationId</span></div>
+    </div>
+
+    <div class="event-card">
+      <span class="event-name" style="background:#1e3a8a;color:#93c5fd">leave.approved</span>
+      <div class="event-row"><span class="event-key">Exchange</span><span class="event-val">leave.events (topic, durable)</span></div>
+      <div class="event-row"><span class="event-key">Routing Key</span><span class="event-val font-mono">leave.approved</span></div>
+      <div class="event-row"><span class="event-key">Published By</span><span class="event-val">Leave Service — after balance deducted + status APPROVED</span></div>
+      <div class="event-row"><span class="event-key">Consumed By</span><span class="event-val">Notification Service — logs approval notification</span></div>
+      <div class="event-row"><span class="event-key">Queue</span><span class="event-val">notification.queue (durable)</span></div>
+      <div class="event-row"><span class="event-key">Payload</span><span class="event-val">leaveRequest, employeeId, correlationId</span></div>
+    </div>
+
+    <div class="event-card">
+      <span class="event-name" style="background:#4c1d95;color:#c4b5fd">leave.rejected</span>
+      <div class="event-row"><span class="event-key">Exchange</span><span class="event-val">leave.events (topic, durable)</span></div>
+      <div class="event-row"><span class="event-key">Routing Key</span><span class="event-val font-mono">leave.rejected</span></div>
+      <div class="event-row"><span class="event-key">Published By</span><span class="event-val">Leave Service — after status set to REJECTED</span></div>
+      <div class="event-row"><span class="event-key">Consumed By</span><span class="event-val">Notification Service — logs rejection with reason</span></div>
+      <div class="event-row"><span class="event-key">Queue</span><span class="event-val">notification.queue (durable)</span></div>
+      <div class="event-row"><span class="event-key">Payload</span><span class="event-val">leaveRequest, employeeId, rejectionReason, correlationId</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SEQUENCE DIAGRAMS -->
+<div class="sequence-section">
+  <h2>// Key Flow Sequences</h2>
+  <div class="seq-grid">
+
+    <div class="seq-box">
+      <div class="seq-title">Leave Approval Flow</div>
+      <div class="seq-step"><div class="seq-num">1</div><div class="seq-text">Manager sends <strong>PATCH /leaves/:id/approve</strong> with JWT Bearer token</div></div>
+      <div class="seq-arrow">→ Gateway :3000</div>
+      <div class="seq-step"><div class="seq-num">2</div><div class="seq-text">Gateway <strong>validates JWT</strong>, strips Authorization header, adds X-User-Id, X-User-Role, X-Internal-Secret, X-Correlation-Id</div></div>
+      <div class="seq-arrow">→ Consul lookup: leave-service</div>
+      <div class="seq-step"><div class="seq-num">3</div><div class="seq-text">Gateway resolves Leave Service address from <strong>Consul</strong>, fires request through <strong>Opossum circuit breaker</strong></div></div>
+      <div class="seq-arrow">→ Leave Service :3002</div>
+      <div class="seq-step"><div class="seq-num">4</div><div class="seq-text">Leave Service verifies <strong>X-Internal-Secret</strong>, reads user context from headers</div></div>
+      <div class="seq-step"><div class="seq-num">5</div><div class="seq-text">Service checks: leave exists → manager owns it → status is PENDING</div></div>
+      <div class="seq-step"><div class="seq-num">6</div><div class="seq-text"><strong>Atomic synchronous block:</strong> deductBalance() then update status APPROVED — no await between them</div></div>
+      <div class="seq-step"><div class="seq-num">7</div><div class="seq-text">Returns <strong>200 APPROVED</strong> to client</div></div>
+      <div class="seq-arrow async">⟶ RabbitMQ: leave.approved (async, non-blocking)</div>
+      <div class="seq-step"><div class="seq-num">8</div><div class="seq-text">Notification Service consumes event, logs structured <strong>approval notification</strong> with correlationId</div></div>
+    </div>
+
+    <div class="seq-box">
+      <div class="seq-title">New Employee Balance Init Flow</div>
+      <div class="seq-step"><div class="seq-num">1</div><div class="seq-text">Manager sends <strong>POST /users</strong> with new employee data via Gateway</div></div>
+      <div class="seq-arrow">→ Gateway → User Service :3001</div>
+      <div class="seq-step"><div class="seq-num">2</div><div class="seq-text">User Service <strong>hashes password</strong> with bcrypt, saves to in-memory Map</div></div>
+      <div class="seq-step"><div class="seq-num">3</div><div class="seq-text">User Service checks role === EMPLOYEE, publishes <strong>user.created event</strong> to RabbitMQ</div></div>
+      <div class="seq-step"><div class="seq-num">4</div><div class="seq-text">Returns <strong>201</strong> to client immediately — does NOT wait for balance init</div></div>
+      <div class="seq-arrow async">⟶ RabbitMQ: user.events exchange</div>
+      <div class="seq-step"><div class="seq-num">5</div><div class="seq-text">Leave Service consumer receives <strong>user.created</strong> from queue leave-service.user.created</div></div>
+      <div class="seq-step"><div class="seq-num">6</div><div class="seq-text">Calls <strong>balanceRepo.initializeBalance(userId)</strong> — idempotent, checks if exists first</div></div>
+      <div class="seq-step"><div class="seq-num">7</div><div class="seq-text">Balance initialized: <strong>CASUAL: 12, SICK: 10, PRIVILEGE: 15</strong></div></div>
+      <div class="seq-step"><div class="seq-num">8</div><div class="seq-text">Message <strong>acked</strong> — if consumer was down, RabbitMQ held the message and delivers on recovery</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DATA MODELS -->
+<div class="models-section">
+  <h2>// In-Memory Data Models</h2>
+  <div class="models-grid">
+
+    <div class="model-card">
+      <div class="model-header" style="background:#1e3a8a20;border-bottom:1px solid #1e3a8a">
+        <div style="width:8px;height:8px;border-radius:50%;background:#3b82f6"></div>
+        <span style="color:#93c5fd">User</span>
+        <span style="color:#475569;font-size:9px;margin-left:auto">Map&lt;string, User&gt;</span>
+      </div>
+      <div class="model-field"><span class="field-name">id</span><span class="field-type">string</span><span class="field-note">uuid</span></div>
+      <div class="model-field"><span class="field-name">name</span><span class="field-type">string</span></div>
+      <div class="model-field"><span class="field-name">email</span><span class="field-type">string</span><span class="field-note">unique</span></div>
+      <div class="model-field"><span class="field-name">passwordHash</span><span class="field-type">string</span><span class="field-note">bcrypt</span></div>
+      <div class="model-field"><span class="field-name">role</span><span class="field-type">UserRole</span><span class="field-note">enum</span></div>
+      <div class="model-field"><span class="field-name">managerId</span><span class="field-type">string?</span><span class="field-note">optional</span></div>
+      <div class="model-field"><span class="field-name">createdAt</span><span class="field-type">string</span><span class="field-note">ISO 8601</span></div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header" style="background:#14532d20;border-bottom:1px solid #14532d">
+        <div style="width:8px;height:8px;border-radius:50%;background:#10b981"></div>
+        <span style="color:#6ee7b7">LeaveRequest</span>
+        <span style="color:#475569;font-size:9px;margin-left:auto">Map&lt;string, LeaveRequest&gt;</span>
+      </div>
+      <div class="model-field"><span class="field-name">id</span><span class="field-type">string</span><span class="field-note">uuid</span></div>
+      <div class="model-field"><span class="field-name">employeeId</span><span class="field-type">string</span></div>
+      <div class="model-field"><span class="field-name">managerId</span><span class="field-type">string</span></div>
+      <div class="model-field"><span class="field-name">leaveType</span><span class="field-type">LeaveType</span><span class="field-note">enum</span></div>
+      <div class="model-field"><span class="field-name">startDate</span><span class="field-type">string</span><span class="field-note">YYYY-MM-DD</span></div>
+      <div class="model-field"><span class="field-name">endDate</span><span class="field-type">string</span><span class="field-note">YYYY-MM-DD</span></div>
+      <div class="model-field"><span class="field-name">numberOfDays</span><span class="field-type">number</span></div>
+      <div class="model-field"><span class="field-name">reason</span><span class="field-type">string</span></div>
+      <div class="model-field"><span class="field-name">status</span><span class="field-type">LeaveStatus</span><span class="field-note">enum</span></div>
+      <div class="model-field"><span class="field-name">rejectionReason</span><span class="field-type">string?</span></div>
+      <div class="model-field"><span class="field-name">createdAt</span><span class="field-type">string</span><span class="field-note">ISO 8601</span></div>
+      <div class="model-field"><span class="field-name">updatedAt</span><span class="field-type">string</span><span class="field-note">ISO 8601</span></div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header" style="background:#14532d20;border-bottom:1px solid #14532d">
+        <div style="width:8px;height:8px;border-radius:50%;background:#10b981"></div>
+        <span style="color:#6ee7b7">LeaveBalance</span>
+        <span style="color:#475569;font-size:9px;margin-left:auto">Map&lt;employeeId, Balance&gt;</span>
+      </div>
+      <div class="model-field"><span class="field-name">employeeId</span><span class="field-type">string</span><span class="field-note">key</span></div>
+      <div class="model-field"><span class="field-name">CASUAL</span><span class="field-type">number</span><span class="field-note">init: 12</span></div>
+      <div class="model-field"><span class="field-name">SICK</span><span class="field-type">number</span><span class="field-note">init: 10</span></div>
+      <div class="model-field"><span class="field-name">PRIVILEGE</span><span class="field-type">number</span><span class="field-note">init: 15</span></div>
+      <div style="padding:10px 16px;border-top:1px solid #1e2d45;">
+        <div style="font-size:9px;color:#475569;font-family:'JetBrains Mono',monospace;line-height:1.7">
+          <div style="color:#10b981;font-weight:700;margin-bottom:4px">Enums</div>
+          <div>LeaveType: CASUAL | SICK | PRIVILEGE</div>
+          <div>LeaveStatus: PENDING | APPROVED</div>
+          <div style="padding-left:60px">| REJECTED | CANCELLED</div>
+          <div style="margin-top:6px">UserRole: EMPLOYEE | MANAGER</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TECH STACK -->
+<div class="tech-section">
+  <h2>// Technology Stack</h2>
+  <div class="tech-grid">
+    <div class="tech-item">
+      <div class="tech-name" style="color:#68a063">Node.js 20</div>
+      <div class="tech-purpose">Runtime — single-threaded event loop enables safe synchronous in-memory mutations</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#60a5fa">Express.js</div>
+      <div class="tech-purpose">HTTP framework — middleware chain, routing, error handler pattern</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#3178c6">TypeScript</div>
+      <div class="tech-purpose">Strict mode — compile-time safety for domain models and layer boundaries</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#f59e0b">Zod</div>
+      <div class="tech-purpose">Request validation — TypeScript-first schemas, type inference, field-level errors</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#ef4444">RabbitMQ</div>
+      <div class="tech-purpose">Message broker — async event delivery, durable queues, at-least-once delivery</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#06b6d4">Consul</div>
+      <div class="tech-purpose">Service registry — dynamic address resolution, health checking, UI at :8500</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#ec4899">Jaeger + OTel</div>
+      <div class="tech-purpose">Distributed tracing — auto-instrumented HTTP spans, trace context propagation</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#8b5cf6">Opossum</div>
+      <div class="tech-purpose">Circuit breaker — timeout 5s, threshold 50%, reset 30s, instant 503 on open</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#10b981">Pino</div>
+      <div class="tech-purpose">Structured logging — JSON output, correlationId on every line, log levels</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#f97316">amqp-conn-mgr</div>
+      <div class="tech-purpose">RabbitMQ client with auto-reconnect — handles startup race condition gracefully</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#fbbf24">jsonwebtoken</div>
+      <div class="tech-purpose">JWT signing (User Service) and verification (Gateway only) — HS256, 8h expiry</div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-name" style="color:#a78bfa">Docker Compose</div>
+      <div class="tech-purpose">Single command startup — 7 containers, shared network, health-check ordering</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Tooltip on card hover
+  const tooltip = document.getElementById('tooltip');
+  const tooltipData = {
+    'gateway': { title: 'API Gateway :3000', body: 'Single public entry point. Validates JWT, enriches headers, discovers services via Consul, applies circuit breaker. Zero business logic.' },
+    'user-svc': { title: 'User Service :3001', body: 'Owns identity domain. In-memory user store with 3 seeded users. Issues JWT tokens. Publishes user.created event when new employee created.' },
+    'leave-svc': { title: 'Leave Service :3002', body: 'Most complex service. Owns leave requests and balances. Enforces all business rules. Atomic synchronous balance deduction. Consumes user.created.' },
+    'notif-svc': { title: 'Notification Service :3003', body: 'No HTTP API. Only consumes RabbitMQ events and logs structured notifications. Completely isolated — if it goes down, nothing else breaks.' },
+    'rabbitmq': { title: 'RabbitMQ :5672/:15672', body: 'Async message broker. Two exchanges: user.events and leave.events. Durable queues hold messages if consumers are down.' },
+    'consul': { title: 'Consul :8500', body: 'Service registry. All services register on startup. Gateway resolves addresses dynamically. Health checks every 10s.' },
+    'jaeger': { title: 'Jaeger :16686/:4318', body: 'Distributed tracing backend. Receives OTLP traces from all services. Shows waterfall view of requests across service boundaries.' },
+  };
+
+  document.querySelectorAll('.card').forEach(card => {
+    const key = Array.from(card.classList).find(c => tooltipData[c]);
+    if (!key) return;
+    card.addEventListener('mousemove', e => {
+      const data = tooltipData[key];
+      tooltip.innerHTML = `<strong>${data.title}</strong>${data.body}`;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY + 14) + 'px';
+      tooltip.classList.add('visible');
+    });
+    card.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+  });
+</script>
+
+</body>
+</html>

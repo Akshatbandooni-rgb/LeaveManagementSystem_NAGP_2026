@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Documentation — Leave Management System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #0f1623;
+    --border: #1e2d45;
+    --border-bright: #2a3f5f;
+
+    --gateway: #8b5cf6;
+    --user-svc: #3b82f6;
+    --leave-svc: #10b981;
+    --notif-svc: #f97316;
+    --rabbitmq: #ef4444;
+    --consul: #06b6d4;
+    --client: #f59e0b;
+
+    --sync: #60a5fa;
+    --async: #fb923c;
+    --discovery: #22d3ee;
+
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #334155;
+
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 36px 52px 28px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(16,185,129,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    position: relative;
+  }
+  header h1 {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  header h1 .accent { color: var(--gateway); }
+  header h1 .accent2 { color: var(--leave-svc); }
+  .header-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .doc-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .meta-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .toc {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    position: relative;
+  }
+  .toc-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .toc-item:hover { border-color: var(--gateway); color: var(--text); }
+
+  /* ── LAYOUT ── */
+  .content { padding: 0 52px 60px; }
+
+  /* ── SECTION ── */
+  .section {
+    padding: 44px 0 0;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    min-width: 28px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── PROSE ── */
+  .prose {
+    font-size: 13.5px;
+    color: #94a3b8;
+    line-height: 1.8;
+    max-width: 860px;
+    margin-bottom: 24px;
+  }
+  .prose strong { color: var(--text); font-weight: 600; }
+  .prose code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #93c5fd;
+  }
+
+  /* ── ENDPOINT CARDS ── */
+  .endpoint-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .endpoint-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .endpoint-header:hover { background: var(--surface2); }
+  .method-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  .method-badge.get { background: #1d4ed8; color: #93c5fd; }
+  .method-badge.post { background: #15803d; color: #86efac; }
+  .method-badge.patch { background: #92400e; color: #fcd34d; }
+  .method-badge.put { background: #7c3aed; color: #ddd6fe; }
+  .method-badge.delete { background: #7f1d1d; color: #fca5a5; }
+  .endpoint-path {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .endpoint-summary {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+  .endpoint-chevron {
+    color: var(--text-dim);
+    font-size: 10px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .endpoint-card.open .endpoint-chevron { transform: rotate(90deg); }
+  .endpoint-body {
+    display: none;
+    border-top: 1px solid var(--border);
+  }
+  .endpoint-card.open .endpoint-body { display: block; }
+
+  /* ── ENDPOINT BODY ── */
+  .endpoint-inner {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .ep-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ep-block-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  .ep-desc {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.7;
+  }
+  .ep-auth-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .auth-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 5px;
+  }
+  .auth-badge.public { background: #052e16; color: #4ade80; }
+  .auth-badge.employee { background: #1e3a5f; color: #93c5fd; }
+  .auth-badge.manager { background: #4c1d95; color: #c4b5fd; }
+  .auth-note {
+    font-size: 11.5px;
+    color: #64748b;
+    font-style: italic;
+  }
+
+  /* ── TABLES ── */
+  .ep-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+  }
+  .ep-table th {
+    padding: 8px 12px;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .ep-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+  .ep-table tr:last-child td { border-bottom: none; }
+  .ep-table tr:hover td { background: rgba(255,255,255,0.01); }
+  .ep-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #93c5fd;
+    white-space: nowrap;
+  }
+  .required-yes {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #14532d;
+    color: #4ade80;
+  }
+  .required-no {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--text-dim);
+  }
+  .field-type {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #f59e0b;
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.9;
+    color: #64748b;
+    overflow-x: auto;
+  }
+  .code-block .ck { color: #93c5fd; }   /* key */
+  .code-block .cv { color: #86efac; }   /* string value */
+  .code-block .cn { color: #fb923c; }   /* number value */
+  .code-block .cb { color: #c4b5fd; }   /* boolean / null */
+  .code-block .cs { color: #64748b; }   /* syntax */
+  .code-block .cc { color: #475569; font-style: italic; } /* comment */
+
+  /* ── SUCCESS RESPONSE ── */
+  .success-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .status-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .s200 { background: #14532d; color: #4ade80; }
+  .s201 { background: #052e16; color: #6ee7b7; }
+
+  /* ── ERROR TABLE ── */
+  .error-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .e400 { background: #422006; color: #fb923c; }
+  .e401 { background: #431407; color: #fca5a5; }
+  .e403 { background: #4c1d95; color: #c4b5fd; }
+  .e404 { background: #1e3a8a; color: #93c5fd; }
+  .e409 { background: #065f46; color: #6ee7b7; }
+  .e422 { background: #78350f; color: #fcd34d; }
+  .e503 { background: #312e81; color: #a5b4fc; }
+
+  /* ── ACTIONS ── */
+  .actions {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 50;
+  }
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: var(--border); }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0 0;
+  }
+
+  /* ── Two-col grid ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* ── inline code ── */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #93c5fd;
+  }
+
+  @media print {
+    .actions { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="actions">
+  <button class="btn" onclick="window.print()">⬇ Export PDF</button>
+  <button class="btn" onclick="expandAll()">↕ Expand All</button>
+</div>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1>API <span class="accent">Documentation</span><br>
+      <span class="accent2">Leave Management</span> System</h1>
+      <div class="header-sub">Leave Management System · Microservices Architecture · Node.js + TypeScript · All Endpoints</div>
+    </div>
+    <div class="doc-meta">
+      <span class="meta-tag">Document Type: API Reference</span>
+      <span class="meta-tag">Endpoints: 16</span>
+      <span class="meta-tag">Services: Authentication · Users · Leaves · Balances · Health</span>
+      <span class="meta-tag">Version: 1.0</span>
+    </div>
+  </div>
+  <nav class="toc">
+    <a class="toc-item" href="#auth">01 · Authentication</a>
+    <a class="toc-item" href="#users">02 · User Management</a>
+    <a class="toc-item" href="#balance">03 · Leave Balance</a>
+    <a class="toc-item" href="#apply">04 · Apply Leave</a>
+    <a class="toc-item" href="#manager">05 · Manager Actions</a>
+    <a class="toc-item" href="#history">06 · Leave History</a>
+    <a class="toc-item" href="#health">07 · Health Checks</a>
+  </nav>
+</header>
+
+<div class="content">
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 1 — AUTHENTICATION
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="auth">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Authentication</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      The authentication service is the entry point for all users. A successful login returns a
+      <strong>JWT token</strong> that must be included as a <code>Bearer</code> token in all
+      subsequent protected requests via the <code>Authorization</code> header.
+    </p>
+
+    <div class="endpoint-list">
+
+      <!-- POST /auth/login -->
+      <div class="endpoint-card open" id="ep-auth-login">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge post">POST</span>
+          <span class="endpoint-path">/auth/login</span>
+          <span class="endpoint-summary">Authenticate a user and receive a JWT token</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Validates user credentials and returns a signed JWT token along with the user's role. The token must be stored client-side and sent in all subsequent authenticated requests.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge public">Public</span>
+                  <span class="auth-note">No token required</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">None — open endpoint accessible by all users.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Content-Type</td><td><span class="required-yes">Yes</span></td><td>Must be <code>application/json</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Body</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"email"</span><span class="cs">:</span>    <span class="cv">"alice@company.com"</span><span class="cs">,</span>  <span class="cc">// string · required · valid email format</span><br>
+&nbsp;&nbsp;<span class="ck">"password"</span><span class="cs">:</span> <span class="cv">"password123"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cc">// string · required · min 6 characters</span><br>
+<span class="cs">}</span>
+              </div>
+              <table class="ep-table" style="margin-top:10px;">
+                <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Validation</th></tr></thead>
+                <tbody>
+                  <tr><td>email</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Must be a valid email address</td></tr>
+                  <tr><td>password</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Minimum 6 characters</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"token"</span><span class="cs">:</span> <span class="cv">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"role"</span><span class="cs">:</span>  <span class="cv">"EMPLOYEE"</span>  <span class="cc">// "EMPLOYEE" | "MANAGER"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><span class="error-code e400">400</span></td>
+                    <td>email or password field is missing from the request body</td>
+                    <td><code>{ "error": "Validation failed", "details": [...] }</code></td>
+                  </tr>
+                  <tr>
+                    <td><span class="error-code e401">401</span></td>
+                    <td>Email not found or password does not match</td>
+                    <td><code>{ "error": "Invalid credentials" }</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 2 — USER MANAGEMENT
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="users">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">User Management</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      User management endpoints handle <strong>creating</strong> and <strong>retrieving</strong> employee records.
+      Listing all users is a manager-only privilege. When a new user is created, an event is published via
+      <strong>RabbitMQ</strong> to automatically initialize their leave balances.
+    </p>
+
+    <div class="endpoint-list">
+
+      <!-- GET /users/:id -->
+      <div class="endpoint-card" id="ep-get-user">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">/users/:id</span>
+          <span class="endpoint-summary">Retrieve a single user by their ID</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Returns the profile of a specific user identified by their ID. The response never includes the <code>passwordHash</code> field.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge employee">Requires Employee Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">Any authenticated user may look up a user by ID.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — JWT obtained from <code>POST /auth/login</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Path Parameters</div>
+              <table class="ep-table">
+                <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>The unique identifier of the user (e.g. <code>emp-001</code>)</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"id"</span><span class="cs">:</span>        <span class="cv">"emp-001"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"name"</span><span class="cs">:</span>      <span class="cv">"Alice Employee"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"email"</span><span class="cs">:</span>     <span class="cv">"alice@company.com"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"role"</span><span class="cs">:</span>      <span class="cv">"EMPLOYEE"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"managerId"</span><span class="cs">:</span> <span class="cv">"mgr-001"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token provided or token is invalid/expired</td><td><code>{ "error": "Authorization token required" }</code> / <code>{ "error": "Invalid token" }</code></td></tr>
+                  <tr><td><span class="error-code e404">404</span></td><td>No user exists with the given ID</td><td><code>{ "error": "User not found" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- GET /users -->
+      <div class="endpoint-card" id="ep-get-all-users">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">/users</span>
+          <span class="endpoint-summary">List all users in the system (Manager only)</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Returns an array of all registered users. Password hashes are never included in any user object. This endpoint is restricted to users with the MANAGER role.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge manager">Requires Manager Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">MANAGER role only. EMPLOYEE tokens will receive a 403 Forbidden response.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — must be a Manager JWT</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">[</span><br>
+&nbsp;&nbsp;<span class="cs">{</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"id"</span><span class="cs">:</span>        <span class="cv">"emp-001"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"name"</span><span class="cs">:</span>      <span class="cv">"Alice Employee"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"email"</span><span class="cs">:</span>     <span class="cv">"alice@company.com"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"role"</span><span class="cs">:</span>      <span class="cv">"EMPLOYEE"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"managerId"</span><span class="cs">:</span> <span class="cv">"mgr-001"</span><br>
+&nbsp;&nbsp;<span class="cs">},</span><br>
+&nbsp;&nbsp;<span class="cs">{ ... }</span><br>
+<span class="cs">]</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token provided or token is invalid/expired</td><td><code>{ "error": "Authorization token required" }</code></td></tr>
+                  <tr><td><span class="error-code e403">403</span></td><td>Caller has EMPLOYEE role (not MANAGER)</td><td><code>{ "error": "Insufficient permissions" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- POST /users -->
+      <div class="endpoint-card" id="ep-create-user">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge post">POST</span>
+          <span class="endpoint-path">/users</span>
+          <span class="endpoint-summary">Create a new employee account (Manager only)</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Creates a new employee user account. On success, a <code>user.created</code> event is published via RabbitMQ which triggers the Balance Service to automatically initialize the new user's leave balances (CASUAL: 12, SICK: 10, PRIVILEGE: 15).</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge manager">Requires Manager Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">MANAGER role only. The manager creating the account must exist in the system.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — must be a Manager JWT</td></tr>
+                  <tr><td>Content-Type</td><td><span class="required-yes">Yes</span></td><td>Must be <code>application/json</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Body</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"name"</span><span class="cs">:</span>      <span class="cv">"Dave Employee"</span><span class="cs">,</span>  <span class="cc">// string · required · full name</span><br>
+&nbsp;&nbsp;<span class="ck">"email"</span><span class="cs">:</span>     <span class="cv">"dave@company.com"</span><span class="cs">,</span> <span class="cc">// string · required · valid email, must be unique</span><br>
+&nbsp;&nbsp;<span class="ck">"password"</span><span class="cs">:</span>  <span class="cv">"password123"</span><span class="cs">,</span>     <span class="cc">// string · required · min 6 characters</span><br>
+&nbsp;&nbsp;<span class="ck">"role"</span><span class="cs">:</span>      <span class="cv">"EMPLOYEE"</span><span class="cs">,</span>       <span class="cc">// string · required · "EMPLOYEE" | "MANAGER"</span><br>
+&nbsp;&nbsp;<span class="ck">"managerId"</span><span class="cs">:</span> <span class="cv">"mgr-001"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="cc">// string · required · ID of the user's manager</span><br>
+<span class="cs">}</span>
+              </div>
+              <table class="ep-table" style="margin-top:10px;">
+                <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Validation</th></tr></thead>
+                <tbody>
+                  <tr><td>name</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Non-empty string</td></tr>
+                  <tr><td>email</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Valid email format; must be unique in the system</td></tr>
+                  <tr><td>password</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Minimum 6 characters</td></tr>
+                  <tr><td>role</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>One of: <code>EMPLOYEE</code>, <code>MANAGER</code></td></tr>
+                  <tr><td>managerId</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Must reference an existing manager's user ID</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 201 Created</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"id"</span><span class="cs">:</span>        <span class="cv">"emp-004"</span><span class="cs">,</span>           <span class="cc">// system-generated unique ID</span><br>
+&nbsp;&nbsp;<span class="ck">"name"</span><span class="cs">:</span>      <span class="cv">"Dave Employee"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"email"</span><span class="cs">:</span>     <span class="cv">"dave@company.com"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"role"</span><span class="cs">:</span>      <span class="cv">"EMPLOYEE"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"managerId"</span><span class="cs">:</span> <span class="cv">"mgr-001"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e400">400</span></td><td>One or more required fields are missing or fail validation</td><td><code>{ "error": "Validation failed", "details": [...] }</code></td></tr>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token provided or token is invalid</td><td><code>{ "error": "Authorization token required" }</code></td></tr>
+                  <tr><td><span class="error-code e403">403</span></td><td>Caller has EMPLOYEE role</td><td><code>{ "error": "Insufficient permissions" }</code></td></tr>
+                  <tr><td><span class="error-code e409">409</span></td><td>An account with the given email already exists</td><td><code>{ "error": "Email already in use" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 3 — LEAVE BALANCE
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="balance">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Leave Balance</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      Each employee has three leave buckets: <strong>CASUAL</strong> (12 days), <strong>SICK</strong> (10 days), and
+      <strong>PRIVILEGE</strong> (15 days). Balances are auto-initialized via RabbitMQ when a user is created and are
+      decremented when a leave request is approved. This endpoint is restricted to the EMPLOYEE role.
+    </p>
+
+    <div class="endpoint-list">
+
+      <!-- GET /balances/my-balance -->
+      <div class="endpoint-card" id="ep-my-balance">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">/balances/my-balance</span>
+          <span class="endpoint-summary">Retrieve the authenticated employee's current leave balances</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Returns the remaining leave day counts for all three leave types for the currently authenticated employee. The identity of the employee is derived entirely from the JWT — no path parameter is required.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge employee">Requires Employee Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">EMPLOYEE role only. Manager tokens are rejected with 403. An employee can only view their own balance.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — must be an Employee JWT</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"CASUAL"</span><span class="cs">:</span>    <span class="cn">9</span><span class="cs">,</span>   <span class="cc">// integer · remaining casual leave days</span><br>
+&nbsp;&nbsp;<span class="ck">"SICK"</span><span class="cs">:</span>      <span class="cn">10</span><span class="cs">,</span>  <span class="cc">// integer · remaining sick leave days</span><br>
+&nbsp;&nbsp;<span class="ck">"PRIVILEGE"</span><span class="cs">:</span> <span class="cn">15</span>&nbsp;&nbsp;&nbsp; <span class="cc">// integer · remaining privilege leave days</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token or invalid/expired token provided</td><td><code>{ "error": "Authorization token required" }</code></td></tr>
+                  <tr><td><span class="error-code e403">403</span></td><td>Token belongs to a MANAGER role user</td><td><code>{ "error": "Insufficient permissions" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 4 — APPLY LEAVE
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="apply">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Apply Leave</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      Employees use this endpoint to submit new leave requests. The system validates date ranges, checks for
+      overlapping requests, and verifies sufficient leave balance before creating the request in
+      <strong>PENDING</strong> status awaiting manager action.
+    </p>
+
+    <div class="endpoint-list">
+
+      <!-- POST /leaves -->
+      <div class="endpoint-card" id="ep-apply-leave">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge post">POST</span>
+          <span class="endpoint-path">/leaves</span>
+          <span class="endpoint-summary">Submit a new leave request</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Creates a new leave request with status <code>PENDING</code>. The employee's identity is extracted from their JWT. The system checks that dates are in the future, the range is valid, there are no date overlaps with existing requests, and the employee has sufficient balance for the requested leave type.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge employee">Requires Employee Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">EMPLOYEE role only. Managers cannot submit leave requests. Employee ID is always inferred from the JWT, not from the request body.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — must be an Employee JWT</td></tr>
+                  <tr><td>Content-Type</td><td><span class="required-yes">Yes</span></td><td>Must be <code>application/json</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Body</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"leaveType"</span><span class="cs">:</span>    <span class="cv">"CASUAL"</span><span class="cs">,</span>     <span class="cc">// string · required · "CASUAL" | "SICK" | "PRIVILEGE"</span><br>
+&nbsp;&nbsp;<span class="ck">"startDate"</span><span class="cs">:</span>   <span class="cv">"2026-09-01"</span><span class="cs">,</span> <span class="cc">// string · required · ISO 8601 date · must not be in the past</span><br>
+&nbsp;&nbsp;<span class="ck">"endDate"</span><span class="cs">:</span>     <span class="cv">"2026-09-03"</span><span class="cs">,</span> <span class="cc">// string · required · ISO 8601 date · must be >= startDate</span><br>
+&nbsp;&nbsp;<span class="ck">"numberOfDays"</span><span class="cs">:</span> <span class="cn">3</span><span class="cs">,</span>           <span class="cc">// integer · required · must be positive</span><br>
+&nbsp;&nbsp;<span class="ck">"reason"</span><span class="cs">:</span>      <span class="cv">"Family vacation"</span><span class="cs">,</span> <span class="cc">// string · required · reason for the leave</span><br>
+&nbsp;&nbsp;<span class="ck">"managerId"</span><span class="cs">:</span>   <span class="cv">"mgr-001"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="cc">// string · required · ID of employee's manager</span><br>
+<span class="cs">}</span>
+              </div>
+              <table class="ep-table" style="margin-top:10px;">
+                <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Validation</th></tr></thead>
+                <tbody>
+                  <tr><td>leaveType</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>One of: <code>CASUAL</code>, <code>SICK</code>, <code>PRIVILEGE</code></td></tr>
+                  <tr><td>startDate</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>ISO 8601 (<code>YYYY-MM-DD</code>); must be today or a future date</td></tr>
+                  <tr><td>endDate</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>ISO 8601 (<code>YYYY-MM-DD</code>); must be equal to or after <code>startDate</code></td></tr>
+                  <tr><td>numberOfDays</td><td><span class="field-type">integer</span></td><td><span class="required-yes">Yes</span></td><td>Positive integer; must not exceed the employee's available balance</td></tr>
+                  <tr><td>reason</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Non-empty string</td></tr>
+                  <tr><td>managerId</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Must reference an existing manager user ID</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 201 Created</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"id"</span><span class="cs">:</span>           <span class="cv">"leave-abc123"</span><span class="cs">,</span>    <span class="cc">// system-generated leave request ID</span><br>
+&nbsp;&nbsp;<span class="ck">"employeeId"</span><span class="cs">:</span>  <span class="cv">"emp-001"</span><span class="cs">,</span>          <span class="cc">// extracted from JWT</span><br>
+&nbsp;&nbsp;<span class="ck">"leaveType"</span><span class="cs">:</span>   <span class="cv">"CASUAL"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"startDate"</span><span class="cs">:</span>   <span class="cv">"2026-09-01"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"endDate"</span><span class="cs">:</span>     <span class="cv">"2026-09-03"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"numberOfDays"</span><span class="cs">:</span> <span class="cn">3</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"reason"</span><span class="cs">:</span>      <span class="cv">"Family vacation"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"managerId"</span><span class="cs">:</span>   <span class="cv">"mgr-001"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>      <span class="cv">"PENDING"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e400">400</span></td><td><code>startDate</code> is in the past</td><td><code>{ "error": "Cannot apply leave for past dates" }</code></td></tr>
+                  <tr><td><span class="error-code e400">400</span></td><td><code>startDate</code> is after <code>endDate</code></td><td><code>{ "error": "Start date must be before end date" }</code></td></tr>
+                  <tr><td><span class="error-code e400">400</span></td><td>Any required field is missing</td><td><code>{ "error": "Validation failed", "details": [...] }</code></td></tr>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token or invalid/expired token</td><td><code>{ "error": "Authorization token required" }</code></td></tr>
+                  <tr><td><span class="error-code e403">403</span></td><td>Token belongs to a MANAGER role user</td><td><code>{ "error": "Insufficient permissions" }</code></td></tr>
+                  <tr><td><span class="error-code e409">409</span></td><td>The requested date range overlaps an existing leave request</td><td><code>{ "error": "Leave dates overlap with an existing request" }</code></td></tr>
+                  <tr><td><span class="error-code e422">422</span></td><td><code>numberOfDays</code> exceeds the employee's available balance for the requested type</td><td><code>{ "error": "Insufficient balance", "details": { "available": 9, "requested": 50 } }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 5 — MANAGER ACTIONS
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="manager">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Manager Actions</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      Managers use these endpoints to view and act on pending leave requests from their team. Approving a
+      leave request triggers a RabbitMQ event that decrements the employee's balance. Rejecting requires a
+      reason. Both actions are <strong>irreversible</strong> — only PENDING requests can be processed.
+    </p>
+
+    <div class="endpoint-list">
+
+      <!-- GET /leaves/pending -->
+      <div class="endpoint-card" id="ep-pending">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">/leaves/pending</span>
+          <span class="endpoint-summary">View all pending leave requests (Manager only)</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Returns an array of leave requests. By default returns all pending requests. Supports optional query parameters to filter by employee ID or request status.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge manager">Requires Manager Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">MANAGER role only. Employee tokens receive a 403 response.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — must be a Manager JWT</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Query Parameters (Optional)</div>
+              <table class="ep-table">
+                <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>employeeId</td><td><span class="field-type">string</span></td><td><span class="required-no">No</span></td><td>Filter results to only show requests from the specified employee ID</td></tr>
+                  <tr><td>status</td><td><span class="field-type">string</span></td><td><span class="required-no">No</span></td><td>Filter by status: <code>PENDING</code>, <code>APPROVED</code>, or <code>REJECTED</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">[</span><br>
+&nbsp;&nbsp;<span class="cs">{</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"id"</span><span class="cs">:</span>           <span class="cv">"leave-abc123"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"employeeId"</span><span class="cs">:</span>  <span class="cv">"emp-001"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"leaveType"</span><span class="cs">:</span>   <span class="cv">"CASUAL"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"startDate"</span><span class="cs">:</span>   <span class="cv">"2026-09-01"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"endDate"</span><span class="cs">:</span>     <span class="cv">"2026-09-03"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"numberOfDays"</span><span class="cs">:</span> <span class="cn">3</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"reason"</span><span class="cs">:</span>      <span class="cv">"Family vacation"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>      <span class="cv">"PENDING"</span><br>
+&nbsp;&nbsp;<span class="cs">},</span><br>
+&nbsp;&nbsp;<span class="cs">{ ... }</span><br>
+<span class="cs">]</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token or invalid/expired token</td><td><code>{ "error": "Authorization token required" }</code></td></tr>
+                  <tr><td><span class="error-code e403">403</span></td><td>Token belongs to an EMPLOYEE role user</td><td><code>{ "error": "Insufficient permissions" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- PATCH /leaves/:id/approve -->
+      <div class="endpoint-card" id="ep-approve">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge patch">PATCH</span>
+          <span class="endpoint-path">/leaves/:id/approve</span>
+          <span class="endpoint-summary">Approve a pending leave request (Manager only)</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Changes the status of a leave request from <code>PENDING</code> to <code>APPROVED</code>. This action triggers a RabbitMQ event that instructs the Balance Service to deduct the approved number of days from the employee's leave balance. Only PENDING requests can be approved.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge manager">Requires Manager Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">MANAGER role only. The manager should be the one assigned to the employee who submitted the request. Employee tokens are rejected with 403.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — must be a Manager JWT</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Path Parameters</div>
+              <table class="ep-table">
+                <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>The ID of the leave request to approve</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"id"</span><span class="cs">:</span>           <span class="cv">"leave-abc123"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"employeeId"</span><span class="cs">:</span>  <span class="cv">"emp-001"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"leaveType"</span><span class="cs">:</span>   <span class="cv">"CASUAL"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"startDate"</span><span class="cs">:</span>   <span class="cv">"2026-09-01"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"endDate"</span><span class="cs">:</span>     <span class="cv">"2026-09-03"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"numberOfDays"</span><span class="cs">:</span> <span class="cn">3</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>      <span class="cv">"APPROVED"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token or invalid/expired token</td><td><code>{ "error": "Authorization token required" }</code></td></tr>
+                  <tr><td><span class="error-code e403">403</span></td><td>Token belongs to an EMPLOYEE role user</td><td><code>{ "error": "Insufficient permissions" }</code></td></tr>
+                  <tr><td><span class="error-code e404">404</span></td><td>No leave request found with the given ID</td><td><code>{ "error": "Leave request not found" }</code></td></tr>
+                  <tr><td><span class="error-code e409">409</span></td><td>Leave request is not in PENDING status (already approved or rejected)</td><td><code>{ "error": "Leave request is not in pending status" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- PATCH /leaves/:id/reject -->
+      <div class="endpoint-card" id="ep-reject">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge patch">PATCH</span>
+          <span class="endpoint-path">/leaves/:id/reject</span>
+          <span class="endpoint-summary">Reject a pending leave request with a reason (Manager only)</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Changes the status of a leave request from <code>PENDING</code> to <code>REJECTED</code>. A rejection reason is required. The employee's leave balance is <em>not</em> affected. Only PENDING requests can be rejected.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge manager">Requires Manager Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">MANAGER role only. Employee tokens are rejected with 403.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — must be a Manager JWT</td></tr>
+                  <tr><td>Content-Type</td><td><span class="required-yes">Yes</span></td><td>Must be <code>application/json</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Path Parameters</div>
+              <table class="ep-table">
+                <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>The ID of the leave request to reject</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Body</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"rejectionReason"</span><span class="cs">:</span> <span class="cv">"Insufficient team coverage this week"</span>  <span class="cc">// string · required</span><br>
+<span class="cs">}</span>
+              </div>
+              <table class="ep-table" style="margin-top:10px;">
+                <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Validation</th></tr></thead>
+                <tbody>
+                  <tr><td>rejectionReason</td><td><span class="field-type">string</span></td><td><span class="required-yes">Yes</span></td><td>Non-empty string explaining why the request was rejected</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"id"</span><span class="cs">:</span>               <span class="cv">"leave-def456"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"employeeId"</span><span class="cs">:</span>      <span class="cv">"emp-001"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"leaveType"</span><span class="cs">:</span>       <span class="cv">"SICK"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"startDate"</span><span class="cs">:</span>       <span class="cv">"2026-10-01"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"endDate"</span><span class="cs">:</span>         <span class="cv">"2026-10-02"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"numberOfDays"</span><span class="cs">:</span>    <span class="cn">2</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>          <span class="cv">"REJECTED"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"rejectionReason"</span><span class="cs">:</span> <span class="cv">"Insufficient team coverage this week"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e400">400</span></td><td><code>rejectionReason</code> is missing or empty</td><td><code>{ "error": "Validation failed", "details": [...] }</code></td></tr>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token or invalid/expired token</td><td><code>{ "error": "Authorization token required" }</code></td></tr>
+                  <tr><td><span class="error-code e403">403</span></td><td>Token belongs to an EMPLOYEE role user</td><td><code>{ "error": "Insufficient permissions" }</code></td></tr>
+                  <tr><td><span class="error-code e404">404</span></td><td>No leave request found with the given ID</td><td><code>{ "error": "Leave request not found" }</code></td></tr>
+                  <tr><td><span class="error-code e409">409</span></td><td>Leave request is not in PENDING status (already approved or rejected)</td><td><code>{ "error": "Leave request is not in pending status" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 6 — LEAVE HISTORY
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="history">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Leave History</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      Employees can retrieve their full leave request history with support for <strong>pagination</strong>
+      and <strong>status filtering</strong>. All responses are scoped to the requesting employee — users
+      cannot view each other's history.
+    </p>
+
+    <div class="endpoint-list">
+
+      <!-- GET /leaves/my-requests -->
+      <div class="endpoint-card" id="ep-my-requests">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">/leaves/my-requests</span>
+          <span class="endpoint-summary">Retrieve the authenticated employee's leave request history</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Returns a paginated list of all leave requests submitted by the authenticated employee. Supports filtering by status and controlling page size. The employee's identity is always inferred from the JWT.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge employee">Requires Employee Token</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">Employees can only view their own history. The employee ID is extracted from the JWT; no cross-user access is possible.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Authorization</td><td><span class="required-yes">Yes</span></td><td><code>Bearer &lt;token&gt;</code> — must be an Employee JWT</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Query Parameters (Optional)</div>
+              <table class="ep-table">
+                <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>page</td><td><span class="field-type">integer</span></td><td><span class="required-no">No</span></td><td>Page number to return. Defaults to <code>1</code></td></tr>
+                  <tr><td>limit</td><td><span class="field-type">integer</span></td><td><span class="required-no">No</span></td><td>Number of results per page. Defaults to system default (e.g. <code>10</code>)</td></tr>
+                  <tr><td>status</td><td><span class="field-type">string</span></td><td><span class="required-no">No</span></td><td>Filter by status: <code>PENDING</code>, <code>APPROVED</code>, or <code>REJECTED</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"data"</span><span class="cs">:</span>  <span class="cs">[</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cs">{</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"id"</span><span class="cs">:</span>           <span class="cv">"leave-abc123"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"leaveType"</span><span class="cs">:</span>   <span class="cv">"CASUAL"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"startDate"</span><span class="cs">:</span>   <span class="cv">"2026-09-01"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"endDate"</span><span class="cs">:</span>     <span class="cv">"2026-09-03"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"numberOfDays"</span><span class="cs">:</span> <span class="cn">3</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>      <span class="cv">"APPROVED"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cs">}</span><br>
+&nbsp;&nbsp;<span class="cs">],</span><br>
+&nbsp;&nbsp;<span class="ck">"total"</span><span class="cs">:</span> <span class="cn">5</span><span class="cs">,</span>   <span class="cc">// total number of matching records</span><br>
+&nbsp;&nbsp;<span class="ck">"page"</span><span class="cs">:</span>  <span class="cn">1</span><span class="cs">,</span>   <span class="cc">// current page number</span><br>
+&nbsp;&nbsp;<span class="ck">"limit"</span><span class="cs">:</span> <span class="cn">10</span>&nbsp;&nbsp; <span class="cc">// page size used</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e401">401</span></td><td>No token or invalid/expired token</td><td><code>{ "error": "Authorization token required" }</code></td></tr>
+                  <tr><td><span class="error-code e400">400</span></td><td>Invalid <code>status</code> query param value provided</td><td><code>{ "error": "Validation failed", "details": [...] }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 7 — HEALTH CHECKS
+  ══════════════════════════════════════════════════════ -->
+  <div class="section" id="health">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2 class="section-title">Health Checks</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <p class="prose">
+      Health check endpoints are available on the <strong>API Gateway</strong> and directly on each individual
+      service. The gateway health endpoint additionally reports the state of all configured
+      <strong>circuit breakers</strong>. All health endpoints are public and require no authentication.
+    </p>
+
+    <div class="endpoint-list">
+
+      <!-- GET /health (Gateway) -->
+      <div class="endpoint-card" id="ep-gateway-health">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">/health</span>
+          <span class="endpoint-summary">API Gateway health status with circuit breaker states</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Returns the health status of the API Gateway along with the current state of all registered circuit breakers (CLOSED, OPEN, or HALF-OPEN) for downstream services.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge public">Public</span>
+                  <span class="auth-note">No token required</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">None — publicly accessible diagnostic endpoint.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Request Headers</div>
+              <table class="ep-table">
+                <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td colspan="3" style="color: var(--text-dim); font-style: italic; text-align:center;">No headers required</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>   <span class="cv">"ok"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"circuits"</span><span class="cs">:</span> <span class="cs">{</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"user-service"</span><span class="cs">:</span>         <span class="cv">"CLOSED"</span><span class="cs">,</span>  <span class="cc">// CLOSED | OPEN | HALF-OPEN</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"leave-service"</span><span class="cs">:</span>        <span class="cv">"CLOSED"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"notification-service"</span><span class="cs">:</span> <span class="cv">"CLOSED"</span><br>
+&nbsp;&nbsp;<span class="cs">}</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e503">503</span></td><td>Gateway itself is degraded or cannot reach all downstream services</td><td><code>{ "status": "degraded", "circuits": { ... } }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- GET localhost:3001/health -->
+      <div class="endpoint-card" id="ep-user-health">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">:3001/health</span>
+          <span class="endpoint-summary">User Service direct health check</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Directly probes the User Service at <code>http://localhost:3001/health</code>. Used for infrastructure monitoring or local development to verify the service is running independently of the gateway.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge public">Public</span>
+                  <span class="auth-note">No token required</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">None — internal diagnostic endpoint.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>  <span class="cv">"ok"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"service"</span><span class="cs">:</span> <span class="cv">"user-service"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e503">503</span></td><td>Service is running but cannot connect to its database or dependencies</td><td><code>{ "status": "error", "service": "user-service" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- GET localhost:3002/health -->
+      <div class="endpoint-card" id="ep-leave-health">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">:3002/health</span>
+          <span class="endpoint-summary">Leave Service direct health check</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Directly probes the Leave Service at <code>http://localhost:3002/health</code>. Confirms the service is running and able to serve leave-related requests.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge public">Public</span>
+                  <span class="auth-note">No token required</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">None — internal diagnostic endpoint.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>  <span class="cv">"ok"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"service"</span><span class="cs">:</span> <span class="cv">"leave-service"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e503">503</span></td><td>Service is running but cannot connect to its database or dependencies</td><td><code>{ "status": "error", "service": "leave-service" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- GET localhost:3003/health -->
+      <div class="endpoint-card" id="ep-notif-health">
+        <div class="endpoint-header" onclick="toggleCard(this)">
+          <span class="method-badge get">GET</span>
+          <span class="endpoint-path">:3003/health</span>
+          <span class="endpoint-summary">Notification Service direct health check</span>
+          <span class="endpoint-chevron">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <div class="endpoint-inner">
+
+            <div class="ep-block">
+              <div class="ep-block-title">Overview</div>
+              <div class="ep-desc">Directly probes the Notification Service at <code>http://localhost:3003/health</code>. Confirms the service is up and connected to the RabbitMQ message broker.</div>
+            </div>
+
+            <div class="two-col">
+              <div class="ep-block">
+                <div class="ep-block-title">Authentication</div>
+                <div class="ep-auth-row">
+                  <span class="auth-badge public">Public</span>
+                  <span class="auth-note">No token required</span>
+                </div>
+              </div>
+              <div class="ep-block">
+                <div class="ep-block-title">Authorization</div>
+                <div class="ep-desc" style="font-size:12px;">None — internal diagnostic endpoint.</div>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Success Response — 200 OK</div>
+              <div class="code-block">
+<span class="cs">{</span><br>
+&nbsp;&nbsp;<span class="ck">"status"</span><span class="cs">:</span>  <span class="cv">"ok"</span><span class="cs">,</span><br>
+&nbsp;&nbsp;<span class="ck">"service"</span><span class="cs">:</span> <span class="cv">"notification-service"</span><br>
+<span class="cs">}</span>
+              </div>
+            </div>
+
+            <div class="ep-block">
+              <div class="ep-block-title">Error Responses</div>
+              <table class="ep-table">
+                <thead><tr><th>Status</th><th>When It Occurs</th><th>Response Body</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="error-code e503">503</span></td><td>Service is running but cannot connect to RabbitMQ or its dependencies</td><td><code>{ "status": "error", "service": "notification-service" }</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleCard(header) {
+    const card = header.parentElement;
+    card.classList.toggle('open');
+  }
+
+  function expandAll() {
+    const cards = document.querySelectorAll('.endpoint-card');
+    const allOpen = [...cards].every(c => c.classList.contains('open'));
+    cards.forEach(c => {
+      if (allOpen) c.classList.remove('open');
+      else c.classList.add('open');
+    });
+    const btn = document.querySelector('.actions .btn:last-child');
+    btn.textContent = allOpen ? '↕ Expand All' : '↕ Collapse All';
+  }
+</script>
+
+</body>
+</html>
