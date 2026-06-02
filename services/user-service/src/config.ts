@@ -6,11 +6,7 @@ dotenv.config({
 });
 
 const port = Number(process.env.PORT) || 3001;
-console.log('***********************************************************************************************');
-console.log('Process Environment Variables:');
-console.log(`PORT: ${process.env.PORT}`);
-console.log(`JWT_SECRET: ${process.env.JWT_SECRET ? '***' : 'Not Set'}`);
-console.log('***********************************************************************************************');
+
 
 const jwtSecret = process.env.JWT_SECRET;
 

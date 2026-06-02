@@ -38,7 +38,6 @@ export async function applyLeave(input: {
   const calculatedDays =
     Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    console.log('Calculated days:', calculatedDays, 'Input days:', input.numberOfDays);
 
   if (input.numberOfDays !== calculatedDays) {
     throw new AppError(
