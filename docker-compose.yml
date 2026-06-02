@@ -51,9 +51,7 @@ services:
       - leave-net
 
   user-service:
-    build:
-      context: .
-      dockerfile: services/user-service/Dockerfile
+    image: akshatbandooni333/lms-user-service:latest
     networks:
       - leave-net
     env_file:
@@ -78,9 +76,7 @@ services:
       start_period: 30s
 
   leave-service:
-    build:
-      context: .
-      dockerfile: services/leave-service/Dockerfile
+    image: akshatbandooni333/lms-leave-service:latest
     networks:
       - leave-net
     env_file:
@@ -105,9 +101,7 @@ services:
       start_period: 30s
 
   notification-service:
-    build:
-      context: .
-      dockerfile: services/notification-service/Dockerfile
+    image: akshatbandooni333/lms-notification-service:latest
     networks:
       - leave-net
     env_file:
@@ -132,9 +126,7 @@ services:
       start_period: 30s
 
   api-gateway:
-    build:
-      context: .
-      dockerfile: services/api-gateway/Dockerfile
+    image: akshatbandooni333/lms-api-gateway:latest
     networks:
       - leave-net
     ports:
