@@ -15,7 +15,7 @@ There is no frontend UI in this project. All users interact with the system thro
 The editable draw.io source diagram is available here:
 
 ```text
-docs/point-1-microservices-architecture.drawio
+docs/microservices-architecture.drawio
 ```
 
 Open this file in diagrams.net / draw.io to view or edit the architecture. The file has two pages:

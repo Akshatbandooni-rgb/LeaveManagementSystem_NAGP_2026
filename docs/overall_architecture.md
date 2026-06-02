@@ -1,4 +1,4 @@
-# Leave Management System — Comprehensive Repository Analysis & Knowledge Base
+# Leave Management System — Overall Overview of System Flow
 
 This document serves as a persistent, high-fidelity internal representation and mental model of the Leave Management System repository. It details the repository structure, architecture, runtime execution flows, layers, coding patterns and integration points
 
