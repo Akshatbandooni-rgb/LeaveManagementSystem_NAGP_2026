@@ -9,6 +9,6 @@ const router = Router();
 
 router.get('/', internalAuth, requireRole('MANAGER'), getAll);
 router.get('/:id', internalAuth, getById);
-router.post('/', internalAuth, validate(createUserSchema), create);
+router.post('/', internalAuth, requireRole('MANAGER'), validate(createUserSchema), create);
 
 export default router;

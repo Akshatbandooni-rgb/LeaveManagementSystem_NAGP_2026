@@ -1,0 +1,1471 @@
+{
+  "info": {
+    "_postman_id": "5c025e58-963c-463f-a644-245e9fd989f8",
+    "name": "NAGP_MICROSERVICES",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login - Alice (Employee)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has token', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test('Role is EMPLOYEE', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.role).to.eql('EMPLOYEE');",
+                  "});",
+                  "const token = pm.response.json().token;",
+                  "pm.environment.set('employeeToken', token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"alice@company.com\", \"password\": \"password123\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Charlie (Manager)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has token', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test('Role is MANAGER', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.role).to.eql('MANAGER');",
+                  "});",
+                  "const token = pm.response.json().token;",
+                  "pm.environment.set('managerToken', token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"charlie@company.com\", \"password\": \"password123\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Wrong Password (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Error message is Invalid credentials', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.eql('Invalid credentials');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"alice@company.com\", \"password\": \"wrongpassword\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Missing Fields (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Validation error returned', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.eql('Validation failed');",
+                  "    pm.expect(data.details).to.be.an('array').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - No Token Request (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Error is Authorization token required', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.include('token');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/balances/my-balance",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["balances", "my-balance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Invalid Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Error is Invalid token', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.include('Invalid token');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer thisisnotavalidtoken" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/balances/my-balance",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["balances", "my-balance"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Get User By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response does not contain passwordHash', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.not.have.property('passwordHash');",
+                  "});",
+                  "pm.test('User id matches requested id', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.id).to.eql('emp-001');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/users/emp-001",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["users", "emp-001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users - Manager Only (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is array', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.be.an('array');",
+                  "});",
+                  "pm.test('No passwordHash in any user', function () {",
+                  "    const data = pm.response.json();",
+                  "    data.forEach(user => {",
+                  "        pm.expect(user).to.not.have.property('passwordHash');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/users",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users - Employee Forbidden (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test('Error message present', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/users",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Employee (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('New user has id', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test('No passwordHash in response', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.not.have.property('passwordHash');",
+                  "});",
+                  "pm.environment.set('newUserId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Dave Employee\", \"email\": \"dave@company.com\", \"password\": \"password123\", \"role\": \"EMPLOYEE\", \"managerId\": \"mgr-001\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/users",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login as Newly Created User (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Token received for new user', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.environment.set('newUserToken', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"dave@company.com\", \"password\": \"password123\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/auth/login",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New User Balance Auto-Initialized via RabbitMQ (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Balance auto-initialized with correct values', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.CASUAL).to.eql(12);",
+                  "    pm.expect(data.SICK).to.eql(10);",
+                  "    pm.expect(data.PRIVILEGE).to.eql(15);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{newUserToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/balances/my-balance",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["balances", "my-balance"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Leave Balance",
+      "item": [
+        {
+          "name": "View My Balance - Employee (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Balance has all three leave types', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('CASUAL');",
+                  "    pm.expect(data).to.have.property('SICK');",
+                  "    pm.expect(data).to.have.property('PRIVILEGE');",
+                  "});",
+                  "pm.test('Initial CASUAL balance is 12', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.CASUAL).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/balances/my-balance",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["balances", "my-balance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "View Balance - No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/balances/my-balance",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["balances", "my-balance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "View Balance - Manager Token (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/balances/my-balance",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["balances", "my-balance"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Apply Leave",
+      "item": [
+        {
+          "name": "Apply Leave - Success (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Status is PENDING', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql('PENDING');",
+                  "});",
+                  "pm.test('Leave has an id', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test('Leave type is CASUAL', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.leaveType).to.eql('CASUAL');",
+                  "});",
+                  "pm.environment.set('pendingLeaveRequestId', pm.response.json().id);",
+                  "console.log('Saved pendingLeaveRequestId:', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"leaveType\": \"CASUAL\", \"startDate\": \"2026-09-01\", \"endDate\": \"2026-09-03\", \"numberOfDays\": 3, \"reason\": \"Family vacation planned for summer break\", \"managerId\": \"{{managerUserId}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Leave - Past Date (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Error mentions past date', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.include('past');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"leaveType\": \"CASUAL\", \"startDate\": \"2024-01-01\", \"endDate\": \"2024-01-03\", \"numberOfDays\": 3, \"reason\": \"This date is in the past test\", \"managerId\": \"{{managerUserId}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Leave - Start After End Date (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Error mentions date range', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"leaveType\": \"CASUAL\", \"startDate\": \"2026-10-10\", \"endDate\": \"2026-10-05\", \"numberOfDays\": 3, \"reason\": \"Invalid date range test case\", \"managerId\": \"{{managerUserId}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Leave - Insufficient Balance (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 422', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test('Error mentions balance', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.include('balance');",
+                  "});",
+                  "pm.test('Details show available and requested', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.details).to.have.property('available');",
+                  "    pm.expect(data.details).to.have.property('requested');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"leaveType\": \"CASUAL\", \"startDate\": \"2026-11-01\", \"endDate\": \"2026-12-31\", \"numberOfDays\": 50, \"reason\": \"Requesting more days than available balance\", \"managerId\": \"{{managerUserId}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Leave - Overlapping Dates (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('Error mentions overlap', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.include('overlap');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"leaveType\": \"CASUAL\", \"startDate\": \"2026-09-02\", \"endDate\": \"2026-09-04\", \"numberOfDays\": 3, \"reason\": \"Overlapping with existing request test\", \"managerId\": \"{{managerUserId}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Leave - Manager Role Denied (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"leaveType\": \"CASUAL\", \"startDate\": \"2026-09-10\", \"endDate\": \"2026-09-12\", \"numberOfDays\": 3, \"reason\": \"Manager trying to apply leave test\", \"managerId\": \"{{managerUserId}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Leave To Reject Later (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Status is PENDING', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql('PENDING');",
+                  "});",
+                  "pm.environment.set('rejectedLeaveRequestId', pm.response.json().id);",
+                  "console.log('Saved rejectedLeaveRequestId:', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"leaveType\": \"SICK\", \"startDate\": \"2026-10-01\", \"endDate\": \"2026-10-02\", \"numberOfDays\": 2, \"reason\": \"Feeling unwell and need rest day\", \"managerId\": \"{{managerUserId}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Manager Actions",
+      "item": [
+        {
+          "name": "View All Pending Requests (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is array', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.be.an('array');",
+                  "});",
+                  "pm.test('Contains Alice pending request', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.length).to.be.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/pending",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "pending"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Pending by Employee ID (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('All results belong to emp-001', function () {",
+                  "    const data = pm.response.json();",
+                  "    data.forEach(item => {",
+                  "        pm.expect(item.employeeId).to.eql('emp-001');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/pending?employeeId=emp-001",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "pending"],
+              "query": [{ "key": "employeeId", "value": "emp-001" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Pending by Status PENDING (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('All results have PENDING status', function () {",
+                  "    const data = pm.response.json();",
+                  "    data.forEach(item => {",
+                  "        pm.expect(item.status).to.eql('PENDING');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/pending?status=PENDING",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "pending"],
+              "query": [{ "key": "status", "value": "PENDING" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Employee Tries to View Pending (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/pending",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "pending"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Leave (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Status changed to APPROVED', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql('APPROVED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/{{pendingLeaveRequestId}}/approve",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "{{pendingLeaveRequestId}}", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Already Approved Leave (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('Error mentions not pending', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.error).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/{{pendingLeaveRequestId}}/approve",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "{{pendingLeaveRequestId}}", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve with Employee Token (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/{{rejectedLeaveRequestId}}/approve",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "{{rejectedLeaveRequestId}}", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Leave (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Status changed to REJECTED', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql('REJECTED');",
+                  "});",
+                  "pm.test('Rejection reason is present', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.rejectionReason).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{managerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"rejectionReason\": \"Insufficient team coverage this week\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/{{rejectedLeaveRequestId}}/reject",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "{{rejectedLeaveRequestId}}", "reject"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Balance Decreased After Approval (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('CASUAL balance decreased from 12', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.CASUAL).to.be.lessThan(12);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/balances/my-balance",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["balances", "my-balance"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Leave History",
+      "item": [
+        {
+          "name": "Get All My History (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has pagination fields', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('data');",
+                  "    pm.expect(data).to.have.property('total');",
+                  "    pm.expect(data).to.have.property('page');",
+                  "    pm.expect(data).to.have.property('limit');",
+                  "});",
+                  "pm.test('Data is array', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/my-requests",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "my-requests"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get History - Paginated Page 1 Limit 2 (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Page is 1 and limit is 2', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.page).to.eql(1);",
+                  "    pm.expect(data.limit).to.eql(2);",
+                  "});",
+                  "pm.test('Data array has at most 2 items', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.data.length).to.be.at.most(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/my-requests?page=1&limit=2",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "my-requests"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "2" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter History by Status APPROVED (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('All results are APPROVED', function () {",
+                  "    const data = pm.response.json();",
+                  "    data.data.forEach(item => {",
+                  "        pm.expect(item.status).to.eql('APPROVED');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/my-requests?status=APPROVED",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "my-requests"],
+              "query": [{ "key": "status", "value": "APPROVED" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter History by Status REJECTED (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('All results are REJECTED', function () {",
+                  "    const data = pm.response.json();",
+                  "    data.data.forEach(item => {",
+                  "        pm.expect(item.status).to.eql('REJECTED');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/my-requests?status=REJECTED",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "my-requests"],
+              "query": [{ "key": "status", "value": "REJECTED" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter History by Status PENDING (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('All results are PENDING', function () {",
+                  "    const data = pm.response.json();",
+                  "    data.data.forEach(item => {",
+                  "        pm.expect(item.status).to.eql('PENDING');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+            ],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/leaves/my-requests?status=PENDING",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["leaves", "my-requests"],
+              "query": [{ "key": "status", "value": "PENDING" }]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Gateway Health - Shows Circuit States (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has circuits field', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('circuits');",
+                  "});",
+                  "pm.test('Status is ok', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayBaseUrl}}/health",
+              "host": ["{{gatewayBaseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User Service Direct Health (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Service name is user-service', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.service).to.eql('user-service');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/health",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Leave Service Direct Health (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Service name is leave-service', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.service).to.eql('leave-service');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/health",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Notification Service Direct Health (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Service name is notification-service', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.service).to.eql('notification-service');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/health",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
