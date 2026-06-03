@@ -385,7 +385,11 @@ Fresh machine checklist:
 2. Ports `3000`, `3001`, `3002`, `3003`, `4318`, `5672`, `8500`, `15672`, `16686` are free
 3. `.env` exists at the repository root with non-empty `JWT_SECRET` and `INTERNAL_SECRET`
 
-Demo video: `[link placeholder]`
+## Demo Recording
+
+A short demo recording of the application is available here:
+
+[Demo Recording — Leave Management System](https://drive.google.com/file/d/1lvi8by7EJ7htScLMZKwXeIsCzjz4eYWi/view?usp=sharing)
 
 ---
 
